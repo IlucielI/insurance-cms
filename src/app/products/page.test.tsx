@@ -10,7 +10,7 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     render(Component);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Manajemen Produk & Aturan Underwriting' })
+      screen.getByRole('heading', { level: 1, name: /Manajemen Produk/i })
     ).toBeDefined();
     expect(screen.getByText(/Total Portofolio Premi \(GWP\)/i)).toBeDefined();
     expect(screen.getByText('Secure Life Plus')).toBeDefined();
@@ -105,78 +105,7 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     });
   });
 
-  it('should open create modal, validate, and successfully create a new product', async () => {
-    const products = await productService.getProducts();
-    const metrics = await productService.getProductMetrics();
-
-    render(
-      <ProductManagementWorkbench
-        initialProducts={products}
-        initialMetrics={metrics}
-      />
-    );
-
-    // Open modal
-    const addBtn = screen.getByRole('button', { name: /Tambah Produk Baru/i });
-    fireEvent.click(addBtn);
-
-    expect(screen.getByText('Tambah Produk Asuransi Baru')).toBeDefined();
-
-    // Fill all form inputs
-    const nameInput = screen.getByPlaceholderText(/misal: Secure Life Plus/i);
-    fireEvent.change(nameInput, { target: { value: 'Term Life Flex' } });
-
-    const slugInput = screen.getByPlaceholderText(/misal: secure-life-plus/i);
-    fireEvent.change(slugInput, { target: { value: 'term-life-flex' } });
-
-    const catSelect = screen.getByDisplayValue('Asuransi Jiwa (Life)');
-    fireEvent.change(catSelect, { target: { value: 'health' } });
-
-    const statusSelect = screen.getByDisplayValue('Draft (Konfigurasi Internal)');
-    fireEvent.change(statusSelect, { target: { value: 'active' } });
-
-    const minSumInput = screen.getByDisplayValue('50000000');
-    fireEvent.change(minSumInput, { target: { value: '60000000' } });
-
-    const maxSumInput = screen.getByDisplayValue('500000000');
-    fireEvent.change(maxSumInput, { target: { value: '600000000' } });
-
-    const premiumInput = screen.getByDisplayValue('150000');
-    fireEvent.change(premiumInput, { target: { value: '180000' } });
-
-    const baseRateInput = screen.getByDisplayValue('0.0035');
-    fireEvent.change(baseRateInput, { target: { value: '0.0045' } });
-
-    const descInput = screen.getByPlaceholderText(/Ringkasan 1-2 kalimat/i);
-    fireEvent.change(descInput, { target: { value: 'Proteksi flexibel untuk kesehatan' } });
-
-    const targetInput = screen.getByPlaceholderText(/misal: Keluarga muda dan pekerja/i);
-    fireEvent.change(targetInput, { target: { value: 'Generasi muda 20-35 tahun' } });
-
-    const textareas = screen.getAllByRole('textbox');
-    // Benefits textarea
-    fireEvent.change(textareas[textareas.length - 2], {
-      target: { value: 'Santunan rawat inap\nOperasi darurat' },
-    });
-    // Exclusions textarea
-    fireEvent.change(textareas[textareas.length - 1], {
-      target: { value: 'Klaim palsu\nKelalaian disengaja' },
-    });
-
-    const submitBtn = screen.getByRole('button', { name: /Tambah Produk ✨/i });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Produk baru "Term Life Flex" berhasil ditambahkan./i)).toBeDefined();
-    });
-
-    // Dismiss toast
-    const dismissBtn = screen.getByLabelText('Dismiss toast');
-    fireEvent.click(dismissBtn);
-    expect(screen.queryByLabelText('Dismiss toast')).toBeNull();
-  });
-
-  it('should show form error on conflict or invalid inputs in create modal', async () => {
+  it('should open create modal, fill form, and successfully create product with vector sync', async () => {
     const products = await productService.getProducts();
     const metrics = await productService.getProductMetrics();
 
@@ -191,14 +120,49 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     const addBtn = screen.getByRole('button', { name: /Tambah Produk Baru/i });
     fireEvent.click(addBtn);
 
-    // Enter existing slug to trigger duplicate error
-    const nameInput = screen.getByPlaceholderText(/misal: Secure Life Plus/i);
-    fireEvent.change(nameInput, { target: { value: 'Duplicate Secure Life' } });
+    expect(screen.getByText(/Definisi Produk & Parameter Underwriting/i)).toBeDefined();
+    expect(screen.getByText(/OTOMATISASI VECTOR DB \(PGVECTOR & RAG AI\)/i)).toBeDefined();
 
-    const slugInput = screen.getByPlaceholderText(/misal: secure-life-plus/i);
+    // Change product name
+    const nameInput = screen.getByPlaceholderText(/misal: Perlindungan Jiwa Syariah Murni/i);
+    fireEvent.change(nameInput, { target: { value: 'Term Life Flex Syariah' } });
+
+    const slugInput = screen.getByPlaceholderText(/misal: life-syariah-murni/i);
+    fireEvent.change(slugInput, { target: { value: 'term-life-flex-syariah' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Simpan & Sinkronkan ke Vector DB/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Produk baru "Term Life Flex Syariah" berhasil ditambahkan./i)).toBeDefined();
+    });
+
+    // Dismiss toast
+    const dismissBtn = screen.getByLabelText('Dismiss toast');
+    fireEvent.click(dismissBtn);
+    expect(screen.queryByLabelText('Dismiss toast')).toBeNull();
+  });
+
+  it('should show form error on duplicate slug in create modal', async () => {
+    const products = await productService.getProducts();
+    const metrics = await productService.getProductMetrics();
+
+    render(
+      <ProductManagementWorkbench
+        initialProducts={products}
+        initialMetrics={metrics}
+      />
+    );
+
+    // Open create modal
+    const addBtn = screen.getByRole('button', { name: /Tambah Produk Baru/i });
+    fireEvent.click(addBtn);
+
+    // Set slug to existing product
+    const slugInput = screen.getByPlaceholderText(/misal: life-syariah-murni/i);
     fireEvent.change(slugInput, { target: { value: 'secure-life-plus' } });
 
-    const submitBtn = screen.getByRole('button', { name: /Tambah Produk ✨/i });
+    const submitBtn = screen.getByRole('button', { name: /Simpan & Sinkronkan ke Vector DB/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -208,10 +172,10 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     // Cancel modal
     const cancelBtn = screen.getByRole('button', { name: /Batal/i });
     fireEvent.click(cancelBtn);
-    expect(screen.queryByText('Tambah Produk Asuransi Baru')).toBeNull();
+    expect(screen.queryByText(/Definisi Produk & Parameter Underwriting/i)).toBeNull();
   });
 
-  it('should open edit modal and successfully update product configuration', async () => {
+  it('should open edit modal and successfully update product with re-index', async () => {
     const products = await productService.getProducts();
     const metrics = await productService.getProductMetrics();
 
@@ -225,9 +189,10 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     const editBtns = screen.getAllByRole('button', { name: /Edit Konfigurasi/i });
     fireEvent.click(editBtns[0]); // First product: Secure Life Plus
 
-    expect(screen.getByText(/Edit Konfigurasi: Secure Life Plus/i)).toBeDefined();
+    expect(screen.getByText(/Edit Produk: Secure Life Plus/i)).toBeDefined();
+    expect(screen.getByText(/STATUS VECTOR DB: TERINDEKS AKTIF/i)).toBeDefined();
 
-    const saveBtn = screen.getByRole('button', { name: /Simpan Perubahan 💾/i });
+    const saveBtn = screen.getByRole('button', { name: /Perbarui & Re-Index Vector DB/i });
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
@@ -235,7 +200,7 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     });
   });
 
-  it('should open and close the pricing rules and actuarial matrix modal', async () => {
+  it('should open and close the pricing rules modal and allow saving', async () => {
     const products = await productService.getProducts();
     const metrics = await productService.getProductMetrics();
 
@@ -249,15 +214,45 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     const pricingBtns = screen.getAllByRole('button', { name: /Aturan Pricing & Aktuaria/i });
     fireEvent.click(pricingBtns[0]);
 
-    expect(screen.getByText(/Matriks Pengali Usia \(Age Factors\)/i)).toBeDefined();
-    expect(screen.getByText(/Pengali Risiko Gaya Hidup & Okupasi/i)).toBeDefined();
+    expect(screen.getByText(/Konfigurasi Pricing Rules: Secure Life Plus/i)).toBeDefined();
+    expect(screen.getByText(/TABEL KOEFISIEN MULTIPLIER USIA MASUK/i)).toBeDefined();
+    expect(screen.getByText(/SINKRONISASI AKTIF: CORE API & VECTOR DB PGVECTOR/i)).toBeDefined();
 
-    // Close modal
-    const closeBtn = screen.getByRole('button', { name: /Tutup Detail/i });
+    const saveBtn = screen.getByRole('button', { name: /Simpan Aturan Tarif/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Aturan pricing untuk "Secure Life Plus" berhasil diperbarui./i)).toBeDefined();
+    });
+  });
+
+  it('should open sandbox calculation modal and allow testing formulas', async () => {
+    const products = await productService.getProducts();
+    const metrics = await productService.getProductMetrics();
+
+    render(
+      <ProductManagementWorkbench
+        initialProducts={products}
+        initialMetrics={metrics}
+      />
+    );
+
+    const sandboxBtns = screen.getAllByRole('button', { name: /Uji di Sandbox/i });
+    fireEvent.click(sandboxBtns[0]);
+
+    expect(screen.getByText(/Sandbox Simulator Kalkulasi Premi Aktuarial/i)).toBeDefined();
+    expect(screen.getByText(/POST \/api\/v1\/simulations\/calculate/i)).toBeDefined();
+
+    // Toggle smoker button
+    const smokerBtn = screen.getByRole('button', { name: /Perokok \(\+35%/i });
+    fireEvent.click(smokerBtn);
+
+    // Close sandbox modal
+    const closeBtn = screen.getByRole('button', { name: /Tutup Simulator/i });
     fireEvent.click(closeBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText(/Matriks Pengali Usia \(Age Factors\)/i)).toBeNull();
+      expect(screen.queryByText(/Sandbox Simulator Kalkulasi Premi Aktuarial/i)).toBeNull();
     });
   });
 });

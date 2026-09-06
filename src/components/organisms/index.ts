@@ -5,3 +5,7 @@ export * from './ManualOverrideModal';
 export * from './ApproveModal';
 export * from './RFIModal';
 export * from './RejectModal';
+export * from './CreateProductModal';
+export * from './EditProductModal';
+export * from './PremiumSandboxModal';
+export * from './PricingRulesModal';
