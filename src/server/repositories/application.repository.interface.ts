@@ -10,7 +10,8 @@ export type PillarStatus =
   | 'FAILED'
   | 'WAIVED'
   | 'NOT_NEEDED'
-  | 'UNDER_REVIEW';
+  | 'UNDER_REVIEW'
+  | 'REJECTED';
 
 export type ApplicationStatus =
   | 'submitted'

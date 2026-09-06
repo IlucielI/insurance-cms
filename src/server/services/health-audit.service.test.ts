@@ -16,6 +16,8 @@ describe('HealthAuditService', () => {
       appName: 'Insurance CMS',
       version: '1.0.0',
       nodeEnv: 'test',
+      gitHash: 'sha256:test1234',
+      startedAt: new Date(),
       timestamp: '2026-09-06T07:00:00.000Z',
     },
     overallStatus: 'online',

@@ -6,7 +6,6 @@ import { Button } from '@/components/atoms/Button';
 import { Select } from '@/components/atoms/Select';
 import { Textarea } from '@/components/atoms/Textarea';
 import { Input } from '@/components/atoms/Input';
-import { Callout } from '@/components/molecules/Callout';
 
 export interface RejectModalProps {
   isOpen: boolean;
@@ -33,9 +32,9 @@ export const RejectModal: React.FC<RejectModalProps> = ({
   underwriterNip = 'UW-2026-042',
   onSubmitReject,
 }) => {
-  const [ojkCode, setOjkCode] = useState('OJK-UW-403');
+  const [ojkCode, setOjkCode] = useState('OJK-UW-402');
   const [justification, setJustification] = useState(
-    'Rasio pengeluaran dan cicilan terhadap pendapatan bersih melebihi batas toleransi risiko aktuaris (DSR > 15%). Profil keuangan pemohon tidak memenuhi mitigasi risiko gagal bayar premi.'
+    'Berdasarkan rekam medis yang dianalisis oleh engine underwriting Core API, pemohon memiliki riwayat penyakit kritis yang berada di luar koridor pertanggungan Secure Life Plus. Kenaikan risiko mortalitas mencapai 3.20x di atas ambang batas maksimum perusahaan (1.80x). Sesuai Bab IV Ketentuan Polis, aplikasi ditolak secara resmi.'
   );
   const [pin, setPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,30 +52,31 @@ export const RejectModal: React.FC<RejectModalProps> = ({
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
+    setPin('');
     setIsSubmitting(false);
     onClose();
   };
 
   const ojkCodeOptions = [
     {
-      value: 'OJK-UW-403',
-      label: 'KODE OJK-UW-403: Rasio Hutang/Pendapatan (DSR) Melampaui Batas (>15%)',
+      value: 'OJK-UW-402',
+      label: '🚫  KODE OJK-UW-402: Riwayat Penyakit Pra-Ada (Pre-Existing Condition) Melebihi Batas Toleransi Risiko',
     },
     {
       value: 'OJK-UW-401',
-      label: 'KODE OJK-UW-401: Ketidaksesuaian Identitas Dukcapil / Dugaan Manipulasi',
+      label: '🚫  KODE OJK-UW-401: Ketidaksesuaian Identitas Dokumen & Data Dukcapil (Fraud Alert)',
     },
     {
-      value: 'OJK-UW-402',
-      label: 'KODE OJK-UW-402: Riwayat Medis Kritis Tidak Memenuhi Kriteria Produk',
+      value: 'OJK-UW-403',
+      label: '🚫  KODE OJK-UW-403: Rasio Hutang/Pendapatan (DSR > 15%) Melampaui Batas Finansial',
     },
     {
       value: 'OJK-UW-404',
-      label: 'KODE OJK-UW-404: Dokumen Pendukung Tidak Sah / Ditolak Verifikasi Legal',
+      label: '🚫  KODE OJK-UW-404: Dokumen Pendukung Tidak Sah / Ditolak Verifikasi Legal',
     },
     {
       value: 'OJK-UW-499',
-      label: 'KODE OJK-UW-499: Pertimbangan Khusus Komite Aktuaris Lainnya',
+      label: '🚫  KODE OJK-UW-499: Pertimbangan Khusus Komite Aktuaris Lainnya',
     },
   ];
 
@@ -104,103 +104,103 @@ export const RejectModal: React.FC<RejectModalProps> = ({
       size="xl"
       badgeText="UNDERWRITING ACTION • PENOLAKAN APLIKASI"
       badgeVariant="rose"
-      title="Tolak Pengajuan Polis Asuransi"
-      subtitle={`Aplikasi #${applicationId} • Keputusan penolakan berdasarkan regulasi AAJI & ketentuan underwriting.`}
+      title="Penolakan Aplikasi Polis Asuransi"
+      subtitle={`Aplikasi #${applicationId} • Pemohon: ${applicantName} • Tindakan ini bersifat final dan mencatat alasan aktuarial resmi sesuai regulasi OJK & AAJI.`}
       footer={
-        <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span>Otoritas:</span>
-            <span className="font-semibold text-slate-800">
-              {underwriterName} ({underwriterNip})
-            </span>
-          </div>
+        <div className="w-full space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="text-slate-500 font-medium">
+              Underwriter: <span className="font-semibold text-slate-800">{underwriterName} ({underwriterNip})</span>
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              disabled={!justification.trim() || pin.length < 4 || isSubmitting}
-              onClick={handleSubmit}
-              className="bg-rose-600 hover:bg-rose-700 shadow-sm"
-            >
-              {isSubmitting ? 'Memproses Penolakan...' : 'Konfirmasi Tolak Pengajuan ❌'}
-            </Button>
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={!justification.trim() || pin.length < 4 || isSubmitting}
+                onClick={handleSubmit}
+                className="bg-rose-600 hover:bg-rose-700 shadow-sm"
+              >
+                {isSubmitting ? 'Memproses Penolakan...' : 'Konfirmasi Tolak Pengajuan Resmi ❌ (Status: REJECTED)'}
+              </Button>
+            </div>
           </div>
+          <p className="text-[11px] text-slate-400 text-center sm:text-left">
+            Data penolakan tersimpan permanen di log integritas sistem Core API dan tidak dapat dibatalkan (Irreversible).
+          </p>
         </div>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        {/* Applicant Summary */}
-        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Nama Pemohon</span>
-            <p className="font-bold text-slate-900 text-sm mt-0.5">{applicantName}</p>
-          </div>
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Email Resmi</span>
-            <p className="font-mono text-slate-600 text-xs mt-0.5">{applicantEmail}</p>
-          </div>
+        {/* Section 1: Standard Rejection Reason */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            1. ALASAN UTAMA PENOLAKAN (STANDAR KODE REGULASI OJK &amp; AAJI):
+          </label>
+          <Select
+            value={ojkCode}
+            onChange={(e) => setOjkCode(e.target.value)}
+            options={ojkCodeOptions}
+          />
         </div>
 
-        {/* Section 1: Standard Rejection Reason */}
-        <Select
-          label="Kode Alasan Penolakan Standar (Kepatuhan OJK & AAJI)*"
-          value={ojkCode}
-          onChange={(e) => setOjkCode(e.target.value)}
-          options={ojkCodeOptions}
-        />
-
         {/* Section 2: Technical Justification Notes */}
-        <Textarea
-          label="Catatan Justifikasi Teknis Underwriting (Wajib untuk Audit Kepatuhan)*"
-          rows={3}
-          maxLength={500}
-          showCount
-          value={justification}
-          onChange={(e) => setJustification(e.target.value)}
-          helperText="Catatan ini menjadi arsip resmi bagi komite kepatuhan dan dasar hukum surat penolakan resmi."
-        />
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            2. JUSTIFIKASI TEKNIS PENOLAKAN UNDERWRITING (WAJIB UNTUK AUDIT AAJI):
+          </label>
+          <Textarea
+            rows={3}
+            maxLength={500}
+            showCount
+            value={justification}
+            onChange={(e) => setJustification(e.target.value)}
+          />
+        </div>
 
         {/* Section 3: Underwriter PIN & Auth */}
-        <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-            Otorisasi Lead Underwriter
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input
-              label="NIP Underwriter"
-              value={underwriterNip}
-              readOnly
-              disabled
-            />
-            <Input
-              label="PIN Otorisasi (Minimal 4 Angka)*"
-              type="password"
-              placeholder="Masukkan PIN keamanan..."
-              maxLength={6}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              helperText="PIN konfirmasi otorisasi keputusan akhir."
-            />
+        <div className="space-y-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            3. KONFIRMASI OTORITAS LEAD UNDERWRITER:
+          </label>
+          <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+            <span className="text-[11px] font-bold text-slate-700 block">
+              🔒 Validasi NIP &amp; Kode PIN Otorisasi:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="NIP Underwriter"
+                value={underwriterNip}
+                readOnly
+                disabled
+              />
+              <Input
+                label="PIN Otorisasi (Minimal 4 Angka)*"
+                type="password"
+                placeholder="Masukkan PIN keamanan..."
+                maxLength={6}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
         {/* Rejection Notification Notice */}
-        <Callout variant="danger" title="Konsekuensi Penolakan Aplikasi:">
-          Surat penolakan resmi berformat PDF ber-QR Code penolakan OJK otomatis dikirimkan ke email{' '}
-          <strong>{applicantEmail}</strong>. Status aplikasi akan ditandai permanen sebagai{' '}
-          <strong>REJECTED</strong>.
-        </Callout>
+        <div className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 text-slate-700 text-xs flex items-center gap-2">
+          <span className="text-base">📧</span>
+          <span>Surat penolakan resmi bersurat kop PT Bayu Insurance Digital Indonesia akan dikirimkan ke email nasabah ({applicantEmail}) secara otomatis.</span>
+        </div>
       </form>
     </Modal>
   );

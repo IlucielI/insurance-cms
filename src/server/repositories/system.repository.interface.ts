@@ -2,6 +2,9 @@ export interface SystemMetadata {
   version: string;
   gitHash: string;
   startedAt: Date;
+  appName?: string;
+  nodeEnv?: string;
+  timestamp?: string;
 }
 
 export interface ISystemRepository {

@@ -5,7 +5,7 @@ describe('ApplicationMockRepository', () => {
   it('should find all applications and support filtering', async () => {
     const repo = new ApplicationMockRepository();
     const all = await repo.findAll();
-    expect(all.length).toBe(6);
+    expect(all.length).toBe(7);
 
     const reviewNeeded = await repo.findAll({ status: 'review_needed' });
     expect(reviewNeeded.every((d) => d.status === 'under_review')).toBe(true);

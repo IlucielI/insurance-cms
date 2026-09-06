@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { HealthMockRepository } from './health.mock.repository';
 import { ISystemRepository } from './system.repository.interface';
+import { AuditSeverity } from './health.repository.interface';
 
 describe('HealthMockRepository', () => {
   let repository: HealthMockRepository;
@@ -12,10 +13,13 @@ describe('HealthMockRepository', () => {
   describe('constructor', () => {
     it('uses provided systemRepository if passed', async () => {
       const mockSysRepo: ISystemRepository = {
+        getStartTime: () => new Date(),
         getSystemMetadata: () => ({
           appName: 'Custom CMS',
           version: '9.9.9',
           nodeEnv: 'staging',
+          gitHash: 'custom123',
+          startedAt: new Date(),
           timestamp: '2026-09-06T00:00:00.000Z',
         }),
       };
