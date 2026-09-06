@@ -20,11 +20,29 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   onOpenSandbox,
   onSavePricingRules,
 }) => {
-  const [baseRatePermil, setBaseRatePermil] = useState(2.3);
-  const [annualDiscountPct, setAnnualDiscountPct] = useState(8.0);
-  const [minTenorYears, setMinTenorYears] = useState(10);
-  const [smokerLoadingPct, setSmokerLoadingPct] = useState(35);
-  const [nonMcuLimit, setNonMcuLimit] = useState(1000000000);
+  const getInitialBaseRate = (p?: InsuranceProduct | null) =>
+    p?.pricingRules?.baseRate ? p.pricingRules.baseRate * 1000 : 2.3;
+
+  const getInitialSmokerPct = (p?: InsuranceProduct | null) =>
+    p?.pricingRules?.smokerFactors?.yes
+      ? Math.round((p.pricingRules.smokerFactors.yes - 1) * 100)
+      : 35;
+
+  const getInitialAnnualDiscount = (p?: InsuranceProduct | null) =>
+    p?.pricingRules?.annualDiscountPct ?? 8.0;
+
+  const getInitialNonMcuLimit = (p?: InsuranceProduct | null) =>
+    p?.pricingRules?.nonMcuLimit ?? 1000000000;
+
+  const [baseRatePermil, setBaseRatePermil] = useState(getInitialBaseRate(product));
+  const [annualDiscountPct, setAnnualDiscountPct] = useState(
+    getInitialAnnualDiscount(product)
+  );
+  const [minTenorYears, setMinTenorYears] = useState(product?.minPaymentTerm || 10);
+  const [smokerLoadingPct, setSmokerLoadingPct] = useState(
+    getInitialSmokerPct(product)
+  );
+  const [nonMcuLimit, setNonMcuLimit] = useState(getInitialNonMcuLimit(product));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -37,15 +55,11 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
     if (isOpen && product) {
       setErrorMsg(null);
       setIsSubmitting(false);
-      const rate = product.pricingRules?.baseRate ? product.pricingRules.baseRate * 1000 : 2.3;
-      setBaseRatePermil(rate);
-      const smokerPct = product.pricingRules?.smokerFactors?.yes
-        ? Math.round((product.pricingRules.smokerFactors.yes - 1) * 100)
-        : 35;
-      setSmokerLoadingPct(smokerPct);
-      setAnnualDiscountPct(8.0);
+      setBaseRatePermil(getInitialBaseRate(product));
+      setSmokerLoadingPct(getInitialSmokerPct(product));
+      setAnnualDiscountPct(getInitialAnnualDiscount(product));
       setMinTenorYears(product.minPaymentTerm || 10);
-      setNonMcuLimit(1000000000);
+      setNonMcuLimit(getInitialNonMcuLimit(product));
     }
   }
 
@@ -62,6 +76,8 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
           yes: 1 + smokerLoadingPct / 100,
           no: 1.0,
         },
+        annualDiscountPct,
+        nonMcuLimit,
       };
       await onSavePricingRules?.({
         ...product,
@@ -171,6 +187,7 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
                 value={annualDiscountPct}
                 onChange={(e) => setAnnualDiscountPct(Number(e.target.value))}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900"
+                aria-label="Diskon Frekuensi Tahunan"
               />
               <span className="text-[10px] text-slate-400">{annualDiscountPct.toFixed(1)}% (Faktor: {(1 - annualDiscountPct / 100).toFixed(2)}x)</span>
             </div>
@@ -302,6 +319,7 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
                   value={nonMcuLimit}
                   onChange={(e) => setNonMcuLimit(Number(e.target.value))}
                   className="w-full px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900"
+                  aria-label="Batas Maksimal Bebas Tes Medis"
                 />
               </div>
               <p className="text-[11px] text-slate-500">

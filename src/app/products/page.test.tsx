@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ProductsPage from './page';
 import { ProductManagementWorkbench } from './ProductManagementWorkbench';
 import { EditProductModal } from '@/components/organisms/EditProductModal';
+import { PricingRulesModal } from '@/components/organisms/PricingRulesModal';
 import { productService } from '@/server/di';
 import type { InsuranceProduct } from '@/server/repositories/product.repository.interface';
 
@@ -387,5 +388,84 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     });
 
     expect(onSubmitEdit).not.toHaveBeenCalled();
+  });
+
+  it('should initialize PricingRulesModal with custom annualDiscountPct and nonMcuLimit from product', async () => {
+    const products = await productService.getProducts();
+    const productWithCustomRules: InsuranceProduct = {
+      ...products[0],
+      pricingRules: {
+        ...products[0].pricingRules,
+        annualDiscountPct: 12.0,
+        nonMcuLimit: 1500000000,
+      },
+    };
+    const onSavePricingRules = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={productWithCustomRules}
+        onClose={vi.fn()}
+        onSavePricingRules={onSavePricingRules}
+      />
+    );
+
+    const discountInput = screen.getByLabelText(/Diskon Frekuensi Tahunan/i) as HTMLInputElement;
+    const nonMcuInput = screen.getByLabelText(/Batas Maksimal Bebas Tes Medis/i) as HTMLInputElement;
+
+    expect(discountInput.value).toBe('12');
+    expect(nonMcuInput.value).toBe('1500000000');
+
+    const saveBtn = screen.getByRole('button', { name: /Simpan Aturan Tarif/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(onSavePricingRules).toHaveBeenCalledTimes(1);
+    });
+
+    const savedRules = onSavePricingRules.mock.calls[0][0].pricingRules;
+    expect(savedRules.annualDiscountPct).toBe(12.0);
+    expect(savedRules.nonMcuLimit).toBe(1500000000);
+  });
+
+  it('should fallback to 8.0 and 1000000000 in PricingRulesModal when fields or pricingRules undefined', () => {
+    const productWithoutCustomRules = {
+      id: 'prod-fallback-pricing',
+      name: 'Fallback Test Product',
+      slug: 'fallback-test-product',
+      category: 'life' as const,
+      status: 'active' as const,
+      shortDescription: 'Deskripsi',
+      description: 'Deskripsi lengkap',
+      targetCustomer: 'Semua',
+      minSumAssured: 100000000,
+      maxSumAssured: 1000000000,
+      minPaymentTerm: 10,
+      maxPaymentTerm: 20,
+      startingPremium: 200000,
+      benefits: ['Benefit'],
+      exclusions: ['Exclusion'],
+      isFeatured: false,
+      activePoliciesCount: 0,
+      grossWrittenPremium: 0,
+      lossRatio: 0,
+      averageTicketSize: 0,
+      underwritingRulesCount: 0,
+    } as unknown as InsuranceProduct;
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={productWithoutCustomRules}
+        onClose={vi.fn()}
+      />
+    );
+
+    const discountInput = screen.getByLabelText(/Diskon Frekuensi Tahunan/i) as HTMLInputElement;
+    const nonMcuInput = screen.getByLabelText(/Batas Maksimal Bebas Tes Medis/i) as HTMLInputElement;
+
+    expect(discountInput.value).toBe('8');
+    expect(nonMcuInput.value).toBe('1000000000');
   });
 });

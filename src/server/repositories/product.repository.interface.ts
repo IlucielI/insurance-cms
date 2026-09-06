@@ -35,6 +35,8 @@ export interface PricingRules {
     quarterly: number;
     monthly: number;
   };
+  annualDiscountPct?: number;
+  nonMcuLimit?: number;
 }
 
 export interface InsuranceProduct {
