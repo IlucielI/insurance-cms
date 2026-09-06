@@ -21,6 +21,15 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
   const [wordCount] = useState('14.800');
   const [chunkCount] = useState(48);
   const [isPublishing, setIsPublishing] = useState(false);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,7 +41,7 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
   const handlePublish = async () => {
     setIsPublishing(true);
     // Simulate brief pipeline completion
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setIsPublishing(false);
       onSuccess?.();
       onClose();

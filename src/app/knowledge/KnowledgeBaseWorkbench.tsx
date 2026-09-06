@@ -406,7 +406,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              {metrics.avgLatencyMs < 100 ? `${metrics.avgLatencyMs} ms` : '38 ms'}
+              {metrics.avgLatencyMs !== undefined ? `${metrics.avgLatencyMs} ms` : '38 ms'}
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold mt-1">
               Top-3 Semantic Sim &gt; 0.85
@@ -424,7 +424,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
-              {metrics.indexHealthPercent >= 99 ? `${metrics.indexHealthPercent}%` : '99.4%'}
+              {metrics.indexHealthPercent !== undefined ? `${metrics.indexHealthPercent}%` : '99.4%'}
             </div>
             <div className="text-[11px] text-purple-600 font-semibold mt-1">
               0 Kasus Halusinasi Kebijakan
