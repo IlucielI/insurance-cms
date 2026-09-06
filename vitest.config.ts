@@ -16,8 +16,12 @@ export default defineConfig({
       include: [
         'src/server/repositories/dashboard.mock.repository.ts',
         'src/server/services/dashboard.service.ts',
+        'src/server/repositories/application.mock.repository.ts',
+        'src/server/services/application.service.ts',
         'src/server/di/registry.ts',
         'src/app/page.tsx',
+        'src/app/queue/page.tsx',
+        'src/app/queue/UnderwritingWorkbench.tsx',
       ],
       thresholds: {
         lines: 80,
