@@ -9,3 +9,4 @@ export * from './CreateProductModal';
 export * from './EditProductModal';
 export * from './PremiumSandboxModal';
 export * from './PricingRulesModal';
+export * from './UploadKnowledgeModal';

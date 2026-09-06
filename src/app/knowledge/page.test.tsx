@@ -10,11 +10,11 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     render(Component);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Knowledge Base AI & Underwriting Copilot' })
+      screen.getByRole('heading', { level: 1, name: /Knowledge Base AI/i })
     ).toBeDefined();
     expect(screen.getByText('Pedoman Batas Uang Pertanggungan & Medical Check-Up')).toBeDefined();
     expect(screen.getByText('Prosedur Verifikasi Dokumen Dukcapil & Biometrik')).toBeDefined();
-    expect(screen.getByText(/Total Vektor Chunks/i)).toBeDefined();
+    expect(screen.getByText(/Total Knowledge Chunks/i)).toBeDefined();
   });
 
   it('should filter documents by category tabs and search query', async () => {
@@ -212,7 +212,7 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     const copilotTab = screen.getByRole('button', { name: /AI Underwriting Copilot Playground/i });
     fireEvent.click(copilotTab);
 
-    expect(screen.getByText('Simulasi Inferensi RAG & Underwriting Copilot')).toBeDefined();
+    expect(screen.getByText('Live RAG Semantic Retrieval Tester')).toBeDefined();
 
     // Click sample prompt
     const samplePromptBtn = screen.getByRole('button', {
@@ -221,8 +221,8 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     fireEvent.click(samplePromptBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Jawaban AI Underwriting Copilot')).toBeDefined();
-      expect(screen.getByText(/Sumber Rujukan Dokumen/i)).toBeDefined();
+      expect(screen.getByText(/Sintesis Jawaban AI/i)).toBeDefined();
+      expect(screen.getByText(/Hasil Retrieval/i)).toBeDefined();
       expect(screen.getAllByText(/Match/i).length).toBeGreaterThan(0);
     });
 
@@ -243,5 +243,30 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     // Click recent query history item
     const historyItem = screen.getByText(/💬 Bagaimana alur klaim rawat inap\?/i);
     fireEvent.click(historyItem);
+  });
+
+  it('should open upload PDF modal, inspect 4 pipeline steps, and publish document', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const uploadBtn = screen.getByRole('button', { name: /Upload Dokumen Polis/i });
+    fireEvent.click(uploadBtn);
+
+    expect(screen.getByText('Unggah Dokumen Polis & Pipeline Embedding')).toBeDefined();
+    expect(screen.getByText('Ekstraksi Teks & OCR Engine')).toBeDefined();
+    expect(screen.getByText('Semantic Chunking & Overlapping')).toBeDefined();
+    expect(screen.getByText(/Generasi Embedding Vektor/i)).toBeDefined();
+    expect(screen.getByText('Publikasi Live ke RAG Query Engine')).toBeDefined();
+
+    const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+    fireEvent.click(publishBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/berhasil dipublikasikan/i)).toBeDefined();
+    });
   });
 });
