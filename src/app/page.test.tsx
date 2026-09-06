@@ -11,8 +11,7 @@ describe('HomePage (CMS 01 Executive Dashboard)', () => {
     expect(screen.getByText('Executive Underwriting Dashboard')).toBeDefined();
     expect(screen.getByText('Core API v1.2.0 • Live')).toBeDefined();
 
-    // Action buttons
-    expect(screen.getByText('Sync Core API')).toBeDefined();
+    // Action button
     expect(screen.getByText('Unduh Audit Log')).toBeDefined();
   });
 

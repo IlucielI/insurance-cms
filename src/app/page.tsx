@@ -43,14 +43,7 @@ export default async function HomePage() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
-            >
-              <span>🔄</span>
-              <span>Sync Core API</span>
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white shadow-sm hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white shadow-sm hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <span>📥</span>
               <span>Unduh Audit Log</span>
@@ -199,12 +192,8 @@ export default async function HomePage() {
             </div>
 
             {/* Table Footer */}
-            <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>Menampilkan 5 dari 28 antrean aktif</span>
-              <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Sync via WebSocket Core API
-              </span>
+            <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Menampilkan 5 dari 28 antrean • Auto-refresh via WebSocket Core API</span>
             </div>
           </div>
 
@@ -256,7 +245,7 @@ export default async function HomePage() {
             </div>
 
             <div className="pt-4 mt-4 border-t border-slate-100 text-[11px] text-slate-400">
-              Kepatuhan audit standar OJK POJK 23/2023
+              Review otomatis didukung integrasi pgvector AI & OCR Dukcapil.
             </div>
           </div>
         </div>
@@ -320,7 +309,7 @@ export default async function HomePage() {
                         Polis Terbit
                       </span>
                       <span className="text-sm font-bold text-slate-800 font-mono">
-                        {prod.activePoliciesCount} Polis
+                        {prod.activePoliciesCount} Polis Aktif
                       </span>
                     </div>
                   </div>
