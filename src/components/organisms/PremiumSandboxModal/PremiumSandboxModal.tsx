@@ -53,7 +53,10 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
       ageFactors.find((af) => age >= af.minAge && age <= af.maxAge)?.factor ||
       (age < 25 ? 0.85 : age > 55 ? 2.1 : 1.0);
 
-    const smokerFactor = isSmoker ? 1.35 : 1.0;
+    const activeSmokerPct = activeProduct?.pricingRules?.smokerFactors?.yes
+      ? Math.round((activeProduct.pricingRules.smokerFactors.yes - 1) * 100)
+      : 35;
+    const smokerFactor = isSmoker ? (1 + activeSmokerPct / 100) : 1.0;
     const frequencyFactor = frequency === 'annual' ? 0.92 : 1.0;
 
     const baseAnnual = sumAssured * baseRate * matchedAgeFactor * smokerFactor;
@@ -69,6 +72,7 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
       baseRate,
       matchedAgeFactor,
       smokerFactor,
+      activeSmokerPct,
       frequencyFactor,
       annualPremium,
       monthlyEquivalent,
@@ -198,7 +202,7 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
               >
                 <div className="flex items-center gap-1.5">
                   <span className="text-amber-600">{isSmoker ? '✓' : '○'}</span>
-                  <span>Perokok (+35% Loading)</span>
+                  <span>Perokok (+{calculation.activeSmokerPct}% Loading)</span>
                 </div>
               </button>
             </div>

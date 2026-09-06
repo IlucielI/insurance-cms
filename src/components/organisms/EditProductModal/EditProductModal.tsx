@@ -48,19 +48,26 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [isArchiving, setIsArchiving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sync state when product changes during render
+  // Sync state when product changes or modal re-opens
   const [prevProductId, setPrevProductId] = useState(product?.id);
-  if (product && product.id !== prevProductId) {
-    setPrevProductId(product.id);
-    setName(product.name);
-    setSlug(product.slug);
-    setCategory(product.category);
-    setStatus(product.status || 'active');
-    setBasePremiumMonthly(product.startingPremium || 250000);
-    setMinSumAssured(product.minSumAssured);
-    setMaxSumAssured(product.maxSumAssured);
-    setMinAge(product.pricingRules?.ageFactors?.[0]?.minAge || 18);
-    setMaxAge(product.pricingRules?.ageFactors?.[product.pricingRules.ageFactors.length - 1]?.maxAge || 60);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen || (product && product.id !== prevProductId)) {
+    setPrevIsOpen(isOpen);
+    setPrevProductId(product?.id);
+    if (isOpen && product) {
+      setErrorMsg(null);
+      setIsSubmitting(false);
+      setIsArchiving(false);
+      setName(product.name);
+      setSlug(product.slug);
+      setCategory(product.category);
+      setStatus(product.status || 'active');
+      setBasePremiumMonthly(product.startingPremium || 250000);
+      setMinSumAssured(product.minSumAssured);
+      setMaxSumAssured(product.maxSumAssured);
+      setMinAge(product.pricingRules?.ageFactors?.[0]?.minAge || 18);
+      setMaxAge(product.pricingRules?.ageFactors?.[product.pricingRules.ageFactors.length - 1]?.maxAge || 60);
+    }
   }
 
   if (!product) return null;

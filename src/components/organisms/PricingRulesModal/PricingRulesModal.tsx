@@ -28,12 +28,25 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sync state if product changes during render
+  // Sync state if product changes or modal re-opens
   const [prevProductId, setPrevProductId] = useState(product?.id);
-  if (product && product.id !== prevProductId) {
-    setPrevProductId(product.id);
-    const rate = product.pricingRules?.baseRate ? product.pricingRules.baseRate * 1000 : 2.3;
-    setBaseRatePermil(rate);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen || (product && product.id !== prevProductId)) {
+    setPrevIsOpen(isOpen);
+    setPrevProductId(product?.id);
+    if (isOpen && product) {
+      setErrorMsg(null);
+      setIsSubmitting(false);
+      const rate = product.pricingRules?.baseRate ? product.pricingRules.baseRate * 1000 : 2.3;
+      setBaseRatePermil(rate);
+      const smokerPct = product.pricingRules?.smokerFactors?.yes
+        ? Math.round((product.pricingRules.smokerFactors.yes - 1) * 100)
+        : 35;
+      setSmokerLoadingPct(smokerPct);
+      setAnnualDiscountPct(8.0);
+      setMinTenorYears(product.minPaymentTerm || 10);
+      setNonMcuLimit(1000000000);
+    }
   }
 
   if (!product) return null;

@@ -42,6 +42,16 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Clear error and loading states when modal re-opens
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setErrorMsg(null);
+      setIsSubmitting(false);
+    }
+  }
+
   const handleNameChange = (val: string) => {
     setName(val);
     const autoSlug = val
