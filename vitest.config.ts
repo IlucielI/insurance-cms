@@ -26,6 +26,10 @@ export default defineConfig({
         'src/app/queue/UnderwritingWorkbench.tsx',
         'src/app/products/page.tsx',
         'src/app/products/ProductManagementWorkbench.tsx',
+        'src/server/repositories/knowledge.mock.repository.ts',
+        'src/server/services/knowledge.service.ts',
+        'src/app/knowledge/page.tsx',
+        'src/app/knowledge/KnowledgeBaseWorkbench.tsx',
       ],
       thresholds: {
         lines: 80,

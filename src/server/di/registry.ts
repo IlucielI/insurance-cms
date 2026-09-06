@@ -7,6 +7,8 @@ import { ApplicationMockRepository } from '../repositories/application.mock.repo
 import { ApplicationService } from '../services/application.service';
 import { ProductMockRepository } from '../repositories/product.mock.repository';
 import { ProductService } from '../services/product.service';
+import { KnowledgeMockRepository } from '../repositories/knowledge.mock.repository';
+import { KnowledgeService } from '../services/knowledge.service';
 
 const systemRepository = new SystemRepository();
 const healthService = new HealthService(systemRepository);
@@ -20,3 +22,6 @@ export const applicationService = new ApplicationService(applicationRepository);
 
 const productRepository = new ProductMockRepository();
 export const productService = new ProductService(productRepository);
+
+const knowledgeRepository = new KnowledgeMockRepository();
+export const knowledgeService = new KnowledgeService(knowledgeRepository);
