@@ -30,6 +30,10 @@ export default defineConfig({
         'src/server/services/knowledge.service.ts',
         'src/app/knowledge/page.tsx',
         'src/app/knowledge/KnowledgeBaseWorkbench.tsx',
+        'src/server/repositories/health.mock.repository.ts',
+        'src/server/services/health-audit.service.ts',
+        'src/app/health/page.tsx',
+        'src/app/health/SystemHealthWorkbench.tsx',
       ],
       thresholds: {
         lines: 80,
