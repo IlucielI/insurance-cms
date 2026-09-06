@@ -237,7 +237,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
           </button>
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live Sync
+            Queue Engine Live
           </span>
         </div>
       </div>
@@ -327,7 +327,9 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
               <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                 Daftar Antrean Aktif ({filteredQueue.length})
               </h2>
-              <span className="text-[11px] text-slate-400 font-medium">SLA Paling Mendesak</span>
+              <span className="text-xs font-semibold text-slate-600 cursor-pointer hover:text-slate-900 transition-colors">
+                Urutkan: SLA Paling Mendesak ▼
+              </span>
             </div>
 
             {/* Search Input */}
@@ -335,7 +337,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
               <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
               <input
                 type="text"
-                placeholder="Cari NIK / Pemohon / ID..."
+                placeholder="Cari nomor aplikasi / NIK..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -412,7 +414,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
           </div>
 
           <div className="p-3 bg-slate-50/80 border-t border-slate-100 text-[11px] text-slate-400 text-center">
-            Menampilkan {filteredQueue.length} dari {queue.length} antrean • Auto Poll 30s
+            Halaman 1 dari 4 ({filteredQueue.length} Total) • Auto Poll 30s
           </div>
         </div>
 
@@ -436,16 +438,18 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-white">
-                    Skor: {activeDossier.riskScore} ({activeDossier.riskGrade})
+                    Skor Risiko: {activeDossier.riskScore} ({activeDossier.riskGrade})
                   </span>
                   <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                    {activeDossier.status}
+                    Core API: {activeDossier.status}
                   </span>
                   <span
                     className="px-3 py-1 rounded-lg text-xs font-bold text-white font-mono"
                     style={{ backgroundColor: activeDossier.slaColor }}
                   >
-                    {activeDossier.slaText}
+                    {activeDossier.slaRemainingMinutes > 0
+                      ? `Sisa SLA: ${activeDossier.slaRemainingMinutes} Menit`
+                      : activeDossier.slaText}
                   </span>
                 </div>
               </div>
@@ -453,20 +457,20 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
               {/* Details Summary Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase">Premi & Tenor</span>
-                  <span className="font-bold text-white block">{activeDossier.monthlyPremium}</span>
-                  <span className="text-slate-400 text-[11px]">Tenor: {activeDossier.tenorYears} Tahun</span>
+                  <span className="text-slate-400 block text-[10px] uppercase">Premi &amp; Tenor</span>
+                  <span className="font-bold text-white block">Premi Bulanan: {activeDossier.monthlyPremium}</span>
+                  <span className="text-slate-400 text-[11px]">Tenor Polis: {activeDossier.tenorYears} Tahun</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase">Metode Pembayaran</span>
-                  <span className="font-bold text-white block">{activeDossier.paymentMethod}</span>
+                  <span className="font-bold text-white block">Metode Bayar: {activeDossier.paymentMethod}</span>
                   <span className="text-slate-400 text-[11px]">
                     Auto-Debet: {activeDossier.autoDebet ? 'Aktif' : 'Non-aktif'}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase">Ahli Waris</span>
-                  <span className="font-bold text-white block">{activeDossier.beneficiaryName}</span>
+                  <span className="font-bold text-white block">Ahli Waris: {activeDossier.beneficiaryName}</span>
                   <span className="text-slate-400 text-[11px]">
                     Porsi: {activeDossier.beneficiarySharePct}% Manfaat
                   </span>
@@ -659,9 +663,11 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
                   ? 'FLAGGED'
                   : selectedPillar.status === 'NOT_NEEDED'
                   ? 'WAIVED'
-                  : selectedPillar.status === 'REJECTED'
+                  : (selectedPillar.status as string) === 'REJECTED' || selectedPillar.status === 'FAILED'
                   ? 'FAILED'
-                  : selectedPillar.status
+                  : selectedPillar.status === 'WAIVED'
+                  ? 'WAIVED'
+                  : 'PASSED'
               }
               onSubmit={handleSubmitOverride}
             />

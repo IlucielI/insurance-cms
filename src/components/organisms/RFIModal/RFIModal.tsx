@@ -6,7 +6,6 @@ import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { Textarea } from '@/components/atoms/Textarea';
 import { Select } from '@/components/atoms/Select';
-import { Callout } from '@/components/molecules/Callout';
 
 export interface RFIModalProps {
   isOpen: boolean;
@@ -34,12 +33,12 @@ export const RFIModal: React.FC<RFIModalProps> = ({
   onSubmitRFI,
 }) => {
   const [selectedDocs, setSelectedDocs] = useState<string[]>([
+    'ktp-hd',
     'rekening-koran',
-    'spt-pajak',
   ]);
   const [deadline, setDeadline] = useState('3');
   const [customNote, setCustomNote] = useState(
-    'Mohon unggah salinan rekening koran 3 bulan terakhir yang dilegalisir bank dan bukti potong PPh 21 tahun berjalan untuk verifikasi komponen pendapatan tetap.'
+    `Halo Bapak ${applicantName}, mohon bantuannya untuk mengunggah ulang foto e-KTP Anda dengan pencahayaan yang jelas dan seluruh sudut kartu terlihat, serta melampirkan file slip gaji 3 bulan terakhir. Dokumen ini diperlukan agar kami dapat segera memproses polis Secure Life Plus Anda.`
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -62,31 +61,37 @@ export const RFIModal: React.FC<RFIModalProps> = ({
 
   const documentOptions = [
     {
-      id: 'rekening-koran',
-      label: 'Rekening Koran 3 Bulan Terakhir (Legalisir Bank)',
-      description: 'Menampilkan mutasi gaji masuk dan rata-rata saldo mengendap.',
+      id: 'ktp-hd',
+      label: 'Foto Ulang Fisik e-KTP (Resolusi Tinggi & Tanpa Pantulan Cahaya)',
+      description: 'Hasil scan pertama terpotong di bagian sudut NIK',
     },
     {
-      id: 'spt-pajak',
-      label: 'Bukti Potong Pajak Penghasilan (PPh 21 / Form 1721-A1)',
-      description: 'Digunakan untuk mengonfirmasi validitas slip gaji dari pemberi kerja.',
+      id: 'rekening-koran',
+      label: 'Slip Gaji 3 Bulan Terakhir / Rekening Koran Legalisir Bank',
+      description: 'Untuk verifikasi kapasitas DSR penghasilan',
     },
     {
       id: 'resume-medis',
-      label: 'Surat Keterangan Dokter Spesialis / Resume Medis Lengkap',
-      description: 'Hasil skrining laboratorium darah lengkap dan riwayat rawat inap terakhir.',
+      label: 'Surat Keterangan Riwayat Medis / Resume Rawat Inap Rumah Sakit',
+      description: 'Opsional jika ada riwayat operasi dalam 2 tahun terakhir',
     },
     {
-      id: 'ktp-hd',
-      label: 'Foto KTP Fisik Resolusi Tinggi (Tanpa Pantulan Kilap/Flash)',
-      description: 'Diperlukan karena foto identitas pada pilar 1 terdeteksi blur oleh OCR.',
+      id: 'surat-narkoba',
+      label: 'Surat Pernyataan Bebas Narkoba & Zat Adiktif (BAP)',
+      description: 'Khusus kriteria pertanggungan profesi risiko tinggi',
     },
   ];
 
   const deadlineOptions = [
-    { value: '3', label: '3 Hari Kerja (Standar SLA Cepat OJK)' },
-    { value: '7', label: '7 Hari Kalender (Disarankan jika ada pemeriksaan lab/klinik)' },
-    { value: '14', label: '14 Hari Kalender (Pengecualian khusus pengurusan instansi)' },
+    { value: '3', label: '⏱️  3 x 24 Jam (Maks. 09 Sep 2026, 23:59 WIB)' },
+    { value: '7', label: '⏱️  7 x 24 Jam (Maks. 13 Sep 2026, 23:59 WIB)' },
+    { value: '14', label: '⏱️  14 x 24 Jam (Maks. 20 Sep 2026, 23:59 WIB)' },
+  ];
+
+  const reminderOptions = [
+    { value: 'h-1', label: '🔔  Kirim Pengingat Otomatis H-1 via Email' },
+    { value: 'h-2', label: '🔔  Kirim Pengingat Otomatis H-2 via Email' },
+    { value: 'none', label: '🔕  Tanpa Pengingat Otomatis' },
   ];
 
   const handleToggleDoc = (docId: string) => {
@@ -116,48 +121,50 @@ export const RFIModal: React.FC<RFIModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       size="2xl"
-      badgeText="UNDERWRITING ACTION • PERMINTAAN DOKUMEN (RFI)"
+      badgeText="UNDERWRITING ACTION • PERMINTAAN BERKAS (RFI)"
       badgeVariant="amber"
-      title="Minta Dokumen Tambahan ke Nasabah (RFI)"
-      subtitle={`Aplikasi #${applicationId} • Kirim instruksi upload berkas resmi langsung ke email ${applicantEmail}.`}
+      title="Permintaan Dokumen Tambahan ke Nasabah"
+      subtitle={`Aplikasi #${applicationId} • Nasabah akan menerima notifikasi email & portal pengunggahan aman.`}
       footer={
-        <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span>Otoritas:</span>
-            <span className="font-semibold text-slate-800">
-              {underwriterName} ({underwriterNip})
-            </span>
-          </div>
+        <div className="w-full space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="text-slate-500 font-medium">
+              Underwriter: <span className="font-semibold text-slate-800">{underwriterName} ({underwriterNip})</span>
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              disabled={selectedDocs.length === 0 || !customNote.trim() || isSubmitting}
-              onClick={handleSubmit}
-              className="bg-amber-600 hover:bg-amber-700 shadow-sm"
-            >
-              {isSubmitting ? 'Mengirim...' : 'Kirim Permintaan Dokumen (RFI) 📤'}
-            </Button>
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={selectedDocs.length === 0 || !customNote.trim() || isSubmitting}
+                onClick={handleSubmit}
+                className="bg-amber-600 hover:bg-amber-700 shadow-sm"
+              >
+                {isSubmitting ? 'Mengirim...' : 'Kirim Permintaan Dokumen Tambahan ke Nasabah 📤'}
+              </Button>
+            </div>
           </div>
+          <p className="text-[11px] text-slate-400 text-center sm:text-left">
+            Tautan upload aman terenkripsi HTTPS akan dikirimkan otomatis ke {applicantEmail}.
+          </p>
         </div>
       }
     >
       <div className="space-y-4 text-xs">
-        {/* Document Checklist */}
+        {/* Section 1: Document Checklist */}
         <div className="space-y-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-            Pilih Jenis Dokumen yang Wajib Diunggah Nasabah:
+            1. PILIH BERKAS TAMBAHAN YANG WAJIB DIUNGGAH NASABAH:
           </label>
           <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
             {documentOptions.map((doc) => (
@@ -177,44 +184,48 @@ export const RFIModal: React.FC<RFIModalProps> = ({
           </div>
         </div>
 
-        {/* Deadline Selector & Custom Instructions */}
-        <div className="grid grid-cols-1 gap-4 pt-1">
-          <Select
-            label="Batas Waktu Pengunggahan Berkas (Deadline SLA)"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            options={deadlineOptions}
-          />
+        {/* Section 2: Batas Waktu Pengunggahan (SLA Deadline) */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            2. BATAS WAKTU PENGUNGGAHAN (SLA DEADLINE):
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              options={deadlineOptions}
+            />
+            <Select
+              defaultValue="h-1"
+              options={reminderOptions}
+            />
+          </div>
+        </div>
 
+        {/* Section 3: Instruksi Khusus untuk Nasabah */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            3. INSTRUKSI KHUSUS UNTUK NASABAH (TAMPIL DI EMAIL &amp; APLIKASI):
+          </label>
           <Textarea
-            label="Instruksi Khusus Underwriter (Akan tercantum di isi email nasabah)*"
             rows={3}
             maxLength={400}
             showCount
             value={customNote}
             onChange={(e) => setCustomNote(e.target.value)}
-            helperText="Tuliskan petunjuk yang jelas dan santun agar nasabah dapat mengunggah berkas dengan tepat."
           />
         </div>
 
-        {/* Notification Channel Banner (Email Only) */}
-        <div className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 flex items-start gap-2.5">
-          <span className="text-base shrink-0">🔔</span>
-          <div className="space-y-0.5">
-            <span className="font-bold text-slate-900">
-              Notifikasi Email &amp; Pengingat Otomatis H-1
-            </span>
-            <p className="text-slate-600 leading-relaxed">
-              Email resmi beserta tautan aman (*secure token*) ke Portal Unggah Berkas akan dikirimkan ke{' '}
-              <strong>{applicantEmail}</strong> ({applicantName}). Sistem otomatis mengirimkan pengingat H-1 via email jika berkas belum diunggah.
-            </p>
+        {/* Callout Info */}
+        <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-1 text-slate-700">
+          <div className="flex items-center gap-1.5 font-bold text-slate-900">
+            <span>ℹ️</span>
+            <span>Status aplikasi akan otomatis berubah menjadi: REQUIRE_DOCUMENTS (Menunggu Dokumen Nasabah).</span>
           </div>
+          <p className="text-[11px] text-slate-600 pl-5">
+            SLA underwriting 3 hari kerja akan di-pause sementara hingga nasabah berhasil mengunggah berkas yang diminta.
+          </p>
         </div>
-
-        <Callout variant="info" title="Status Antrean Setelah RFI Dikirim:">
-          Status aplikasi akan otomatis berubah menjadi{' '}
-          <strong className="text-amber-800">REQUIRE_DOCUMENTS</strong> dan dipindahkan sementara dari antrean aktif hingga nasabah mengunggah berkas baru.
-        </Callout>
       </div>
     </Modal>
   );

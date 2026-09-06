@@ -3,8 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from '@/components/atoms/Modal';
 import { Button } from '@/components/atoms/Button';
-import { Checkbox } from '@/components/atoms/Checkbox';
-import { Callout } from '@/components/molecules/Callout';
 
 export interface ApproveModalProps {
   isOpen: boolean;
@@ -35,7 +33,6 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
   underwriterNip = 'UW-2026-042',
   onConfirmApprove,
 }) => {
-  const [sendAgentCopy, setSendAgentCopy] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -74,102 +71,131 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
       size="xl"
       badgeText="UNDERWRITING ACTION • PERSETUJUAN POLIS"
       badgeVariant="emerald"
-      title="Setujui & Terbitkan Polis Resmi (e-Policy)"
-      subtitle={`Aplikasi #${applicationId} • Penerbitan polis asuransi terverifikasi QR Code OJK.`}
+      title="Persetujuan & Penerbitan Polis Final"
+      subtitle={`Aplikasi #${applicationId} • Pemohon: ${applicantName} • Produk: ${productName}`}
       footer={
-        <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-          <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span>Otoritas:</span>
-            <span className="font-semibold text-slate-800">
-              {underwriterName} ({underwriterNip})
-            </span>
-          </div>
+        <div className="w-full space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="text-slate-500 font-medium">
+              Underwriter: <span className="font-semibold text-slate-800">{underwriterName} (NIP: {underwriterNip})</span> • Waktu Persetujuan: 06 Sep 2026, 08:35 WIB
+            </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={handleClose}
-              disabled={isProcessing}
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              disabled={isProcessing}
-              onClick={handleApprove}
-              className="bg-emerald-600 hover:bg-emerald-700 shadow-sm"
-            >
-              {isProcessing ? 'Menerbitkan Polis...' : 'Setujui & Terbitkan Polis ✨'}
-            </Button>
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={handleClose}
+                disabled={isProcessing}
+              >
+                Kembali ke Review
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                disabled={isProcessing}
+                onClick={handleApprove}
+                className="bg-emerald-600 hover:bg-emerald-700 shadow-sm"
+              >
+                {isProcessing ? 'Menerbitkan Polis...' : `Konfirmasi & Terbitkan Polis Resmi 🚀 (${policyNumberPreview})`}
+              </Button>
+            </div>
           </div>
+          <p className="text-[11px] text-slate-400 text-center sm:text-left">
+            Aksi ini akan mencatat audit hash sha256 dan memicu penagihan autodebet pertama.
+          </p>
         </div>
       }
     >
       <div className="space-y-4 text-xs">
-        {/* Policy Summary Card */}
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Ringkasan Polis yang Disetujui
-            </span>
-            <span className="font-mono font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded text-xs">
-              {policyNumberPreview}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">Nama Tertanggung</span>
-              <p className="font-bold text-slate-900 text-sm mt-0.5">{applicantName}</p>
-              <p className="text-[11px] text-slate-500 font-mono mt-0.5">{applicantEmail}</p>
+        {/* Section 1: Data Polis Resmi yang Akan Diterbitkan */}
+        <div className="space-y-2">
+          <span className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            1. DATA POLIS RESMI YANG AKAN DITERBITKAN
+          </span>
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">NOMOR POLIS OTOMATIS:</span>
+                <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">{policyNumberPreview}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">UANG PERTANGGUNGAN (UP):</span>
+                <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">{sumAssured}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">PREMI TAHUNAN (AUTODEBET):</span>
+                <span className="font-mono font-bold text-emerald-700 text-sm mt-0.5 block">{premium}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">Produk Asuransi</span>
-              <p className="font-bold text-slate-900 text-sm mt-0.5">{productName}</p>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">Uang Pertanggungan (UP)</span>
-              <p className="font-bold text-slate-900 text-sm mt-0.5 font-mono">{sumAssured}</p>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">Premi Pertama Disepakati</span>
-              <p className="font-bold text-emerald-700 text-sm mt-0.5 font-mono">{premium}</p>
+            <div className="pt-2 border-t border-slate-200/70 text-[11px] text-slate-500 font-medium">
+              Masa Berlaku Polis: 06 September 2026 s/d 06 September 2036 (10 Tahun Proteksi Aktif)
             </div>
           </div>
         </div>
 
-        {/* Official Notification Channel Box (Email Only) */}
-        <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/40 space-y-2">
-          <div className="flex items-center space-x-2">
-            <span className="text-base">📧</span>
-            <span className="font-bold text-slate-900">
-              Notifikasi Email Resmi (e-Policy)
-            </span>
-            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-              Email Only
-            </span>
-          </div>
-          <p className="text-slate-600 leading-relaxed">
-            Sistem otomatis mengirimkan buku polis digital lengkap (PDF 28 halaman dengan tanda tangan digital &amp; QR Code OJK) serta bukti tagihan premi ke alamat <strong>{applicantEmail}</strong>.
-          </p>
-          <div className="pt-2">
-            <Checkbox
-              id="copy-agent"
-              checked={sendAgentCopy}
-              onChange={(e) => setSendAgentCopy(e.target.checked)}
-              label="Kirim salinan konfirmasi terbit polis ke agen penutup / branch supervisor"
-            />
+        {/* Section 2: Otomatisasi Sistem Setelah Persetujuan */}
+        <div className="space-y-2">
+          <span className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            2. OTOMATISASI SISTEM SETELAH PERSETUJUAN (LIVE SYSTEM ACTIONS)
+          </span>
+          <div className="space-y-2">
+            <div className="p-3 rounded-lg border border-slate-200 bg-white flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-emerald-600 font-bold text-sm mt-0.5">✓</span>
+                <div>
+                  <h4 className="font-bold text-slate-900">e-Sign Digital Signature OJK</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Menyematkan sertifikat tanda tangan digital resmi pada dokumen polis baku.</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">READY ✓</span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-white flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-emerald-600 font-bold text-sm mt-0.5">✓</span>
+                <div>
+                  <h4 className="font-bold text-slate-900">Generasi Dokumen e-Policy PDF (28 Halaman)</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Menghasilkan file PDF polis lengkap dengan watermarking nomor polis resmi.</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 shrink-0">AUTO-GENERATE ✓</span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-white flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-emerald-600 font-bold text-sm mt-0.5">✓</span>
+                <div>
+                  <h4 className="font-bold text-slate-900">Notifikasi Email Resmi (e-Policy)</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Mengirimkan e-Policy beserta bukti bayar premi pertama ke email nasabah ({applicantEmail}).</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 shrink-0">SEND QUEUE ✓</span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-white flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <span className="text-emerald-600 font-bold text-sm mt-0.5">✓</span>
+                <div>
+                  <h4 className="font-bold text-slate-900">Aktivasi Polis di Customer App (01-06)</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5">Akun nasabah otomatis memiliki kartu polis aktif di dashboard aplikasi mobile/web.</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">INSTANT LIVE 🟢</span>
+            </div>
           </div>
         </div>
 
-        {/* Compliance Callout */}
-        <Callout variant="success" title="Verifikasi Kepatuhan Aktuaris:">
-          Keempat pilar verifikasi telah terkonfirmasi memenuhi standar underwriting. Keputusan ini bersifat final dan otomatis tercatat pada audit trail Core API.
-        </Callout>
+        {/* Section 3: Catatan Resmi Audit Underwriter */}
+        <div className="space-y-2">
+          <span className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            3. CATATAN RESMI AUDIT UNDERWRITER (AUDIT LOG ISO 27001)
+          </span>
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 leading-relaxed text-xs">
+            Semua 4 pilar checks terverifikasi valid tanpa anomali. Verifikasi identitas Dukcapil OCR mencapai 99.4%, rasio premi terhadap pendapatan sangat sehat (1.8%), tidak membutuhkan skrining medis khusus. Disetujui untuk langsung diterbitkan polis aktif nomor {policyNumberPreview}.
+          </div>
+        </div>
       </div>
     </Modal>
   );

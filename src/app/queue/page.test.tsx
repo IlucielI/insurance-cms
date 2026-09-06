@@ -10,7 +10,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     render(Component);
 
     expect(screen.getByText('Underwriting & Verification Workbench')).toBeDefined();
-    expect(screen.getByText('Daftar Antrean Aktif (6)')).toBeDefined();
+    expect(screen.getByText('Daftar Antrean Aktif (7)')).toBeDefined();
   });
 
   it('should render with initialSelectedId from searchParams deep-link', async () => {
@@ -33,13 +33,13 @@ describe('QueuePage & UnderwritingWorkbench', () => {
 
     const tabApproved = screen.getByText(/Disetujui/i);
     fireEvent.click(tabApproved);
-    expect(screen.getByText('Dimas Prasetyo (38)')).toBeDefined();
+    expect(screen.getByText('Agus Kurniawan (38)')).toBeDefined();
 
     const tabAll = screen.getByRole('button', { name: /^Semua/i });
     fireEvent.click(tabAll);
 
     // 2. Search query filtering
-    const searchInput = screen.getByPlaceholderText(/Cari NIK \/ Pemohon \/ ID.../i);
+    const searchInput = screen.getByPlaceholderText(/Cari nomor aplikasi \/ NIK/i);
     fireEvent.change(searchInput, { target: { value: 'Maya' } });
     expect(screen.getByText('Maya Anggraini (33)')).toBeDefined();
 
@@ -60,7 +60,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(hendraItem);
 
     expect(screen.getByText('Pemohon: Hendra Wijaya (41 Thn) • Auto Shield Comprehensive • UP: Rp 380.000.000')).toBeDefined();
-    expect(screen.getByText('Skor: 81 (B+)')).toBeDefined();
+    expect(screen.getByText(/Skor Risiko: 81 \(B\+\)/i)).toBeDefined();
   });
 
   it('should open and confirm approval through ApproveModal', async () => {
@@ -72,10 +72,10 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(approveBtn);
 
     // ApproveModal is now open
-    expect(screen.getByText('Setujui & Terbitkan Polis Resmi (e-Policy)')).toBeDefined();
+    expect(screen.getByText('Persetujuan & Penerbitan Polis Final')).toBeDefined();
 
     // Confirm approval
-    const confirmBtn = screen.getByText('Setujui & Terbitkan Polis ✨');
+    const confirmBtn = screen.getByText(/Konfirmasi & Terbitkan Polis Resmi/i);
     fireEvent.click(confirmBtn);
 
     await waitFor(() => {
@@ -92,10 +92,10 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(rfiBtn);
 
     // RFIModal is now open
-    expect(screen.getByText(/Kirim Permintaan Dokumen/i)).toBeDefined();
+    expect(screen.getByText('Permintaan Dokumen Tambahan ke Nasabah')).toBeDefined();
 
     // Submit RFI
-    const submitRfiBtn = screen.getByText('Kirim Permintaan Dokumen (RFI) 📤');
+    const submitRfiBtn = screen.getByText(/Kirim Permintaan Dokumen Tambahan/i);
     fireEvent.click(submitRfiBtn);
 
     await waitFor(() => {
@@ -112,14 +112,14 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(rejectBtn);
 
     // RejectModal is now open
-    expect(screen.getByText('Tolak Pengajuan Polis Asuransi')).toBeDefined();
+    expect(screen.getByText('Penolakan Aplikasi Polis Asuransi')).toBeDefined();
 
     // Fill PIN input
     const pinInput = screen.getByPlaceholderText('Masukkan PIN keamanan...');
     fireEvent.change(pinInput, { target: { value: '1234' } });
 
     // Submit Reject
-    const submitRejectBtn = screen.getByText('Konfirmasi Tolak Pengajuan ❌');
+    const submitRejectBtn = screen.getByText(/Konfirmasi Tolak Pengajuan Resmi/i);
     fireEvent.click(submitRejectBtn);
 
     await waitFor(() => {
@@ -139,7 +139,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     expect(screen.getByText('Ubah Status & Manual Override Pilar Verifikasi')).toBeDefined();
 
     // Submit override
-    const saveOverrideBtn = screen.getByText('Terapkan Perubahan Status Pilar 💾');
+    const saveOverrideBtn = screen.getByText('Terapkan Perubahan Status Pilar & Perbarui Antrean 💾');
     fireEvent.click(saveOverrideBtn);
 
     await waitFor(() => {
@@ -176,7 +176,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(dismissBtn);
 
     // Search for non-existent name
-    const searchInput = screen.getByPlaceholderText(/Cari NIK \/ Pemohon \/ ID.../i);
+    const searchInput = screen.getByPlaceholderText(/Cari nomor aplikasi \/ NIK/i);
     fireEvent.change(searchInput, { target: { value: 'ZZZZNOTFOUND' } });
     expect(
       screen.getByText('Tidak ada pengajuan yang sesuai dengan kriteria filter.')
