@@ -129,11 +129,12 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
   const handleSubmitRFI = async (data: {
     requestedDocs: string[];
     deadlineDays: string;
+    reminder: string;
     customNote: string;
   }) => {
     if (!activeDossier) return;
     try {
-      const reason = `Dokumen diminta: ${data.requestedDocs.join(', ')} (Batas: ${data.deadlineDays} hari). Catatan: ${data.customNote}`;
+      const reason = `Dokumen diminta: ${data.requestedDocs.join(', ')} (Batas: ${data.deadlineDays} hari, Pengingat: ${data.reminder}). Catatan: ${data.customNote}`;
       const updated = await applicationService.requestDocuments(activeDossier.id, reason);
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setIsRFIOpen(false);

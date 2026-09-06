@@ -50,6 +50,8 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
 
   const validityText = `Masa Berlaku Polis: ${formatDateId(start)} s/d ${formatDateId(end)} (${validityYears} Tahun Proteksi Aktif)`;
 
+  // Real-time approval decision timestamp (ISO 27001 audit compliance)
+  const now = new Date();
   const approvalTimestamp =
     new Intl.DateTimeFormat('id-ID', {
       day: '2-digit',
@@ -58,7 +60,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-    }).format(start) + ' WIB';
+    }).format(now) + ' WIB';
 
   useEffect(() => {
     return () => {

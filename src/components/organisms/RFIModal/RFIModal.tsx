@@ -18,6 +18,7 @@ export interface RFIModalProps {
   onSubmitRFI?: (data: {
     requestedDocs: string[];
     deadlineDays: string;
+    reminder: string;
     customNote: string;
   }) => void;
 }
@@ -37,6 +38,7 @@ export const RFIModal: React.FC<RFIModalProps> = ({
     'rekening-koran',
   ]);
   const [deadline, setDeadline] = useState('3');
+  const [reminder, setReminder] = useState('h-1');
   const [customNote, setCustomNote] = useState(
     `Halo Bapak ${applicantName}, mohon bantuannya untuk mengunggah ulang foto e-KTP Anda dengan pencahayaan yang jelas dan seluruh sudut kartu terlihat, serta melampirkan file slip gaji 3 bulan terakhir. Dokumen ini diperlukan agar kami dapat segera memproses polis Secure Life Plus Anda.`
   );
@@ -109,6 +111,7 @@ export const RFIModal: React.FC<RFIModalProps> = ({
       onSubmitRFI?.({
         requestedDocs: selectedDocs,
         deadlineDays: deadline,
+        reminder,
         customNote,
       });
       setIsSubmitting(false);
@@ -196,7 +199,8 @@ export const RFIModal: React.FC<RFIModalProps> = ({
               options={deadlineOptions}
             />
             <Select
-              defaultValue="h-1"
+              value={reminder}
+              onChange={(e) => setReminder(e.target.value)}
               options={reminderOptions}
             />
           </div>
