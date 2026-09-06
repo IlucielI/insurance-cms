@@ -263,18 +263,46 @@ export const ManualOverrideModal: React.FC<ManualOverrideModalProps> = ({
         </div>
 
         {/* Section 4: Workbench Impact Box */}
-        <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1 text-slate-700 text-xs">
-          <div className="font-bold text-amber-900 flex items-center gap-1.5">
-            <span>⚡</span>
-            <span>DAMPAK PERUBAHAN STATUS TERHADAP WORKBENCH UNDERWRITING:</span>
+        {selectedStatus === 'PASSED' ? (
+          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1 text-slate-700 text-xs">
+            <div className="font-bold text-emerald-900 flex items-center gap-1.5">
+              <span>⚡</span>
+              <span>DAMPAK PERUBAHAN STATUS TERHADAP WORKBENCH UNDERWRITING:</span>
+            </div>
+            <p className="text-[11px] text-slate-600 pl-4">
+              1. Status pilar dievaluasi ulang menjadi LOLOS (PASSED) dengan validasi manual Lead Underwriter.
+            </p>
+            <p className="text-[11px] text-slate-600 pl-4">
+              2. Tombol &quot;Setujui &amp; Terbitkan Polis&quot; di bagian bawah workbench akan AKTIF &amp; SIAP DIPROSES jika tidak ada pilar lain yang tertahan.
+            </p>
           </div>
-          <p className="text-[11px] text-slate-600 pl-4">
-            1. Tombol &quot;Setujui &amp; Terbitkan Polis&quot; di bagian bawah workbench akan OTOMATIS TERKUNCI (DISABLED).
-          </p>
-          <p className="text-[11px] text-slate-600 pl-4">
-            2. Sistem akan menyarankan aktivasi aksi &quot;Minta Dokumen Tambahan (RFI)&quot; kepada nasabah.
-          </p>
-        </div>
+        ) : selectedStatus === 'FAILED' ? (
+          <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/60 space-y-1 text-slate-700 text-xs">
+            <div className="font-bold text-rose-900 flex items-center gap-1.5">
+              <span>⚡</span>
+              <span>DAMPAK PERUBAHAN STATUS TERHADAP WORKBENCH UNDERWRITING:</span>
+            </div>
+            <p className="text-[11px] text-slate-600 pl-4">
+              1. Tombol &quot;Setujui &amp; Terbitkan Polis&quot; di bagian bawah workbench akan OTOMATIS TERKUNCI (DISABLED).
+            </p>
+            <p className="text-[11px] text-slate-600 pl-4">
+              2. Sistem akan menyarankan aktivasi jalur &quot;Tolak Aplikasi&quot; resmi sesuai ketentuan aktuarial OJK &amp; AAJI.
+            </p>
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-1 text-slate-700 text-xs">
+            <div className="font-bold text-amber-900 flex items-center gap-1.5">
+              <span>⚡</span>
+              <span>DAMPAK PERUBAHAN STATUS TERHADAP WORKBENCH UNDERWRITING:</span>
+            </div>
+            <p className="text-[11px] text-slate-600 pl-4">
+              1. Tombol &quot;Setujui &amp; Terbitkan Polis&quot; di bagian bawah workbench akan OTOMATIS TERKUNCI (DISABLED).
+            </p>
+            <p className="text-[11px] text-slate-600 pl-4">
+              2. Sistem akan menyarankan aktivasi aksi &quot;Minta Dokumen Tambahan (RFI)&quot; kepada nasabah.
+            </p>
+          </div>
+        )}
       </form>
     </Modal>
   );
