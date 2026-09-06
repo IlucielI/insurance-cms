@@ -19,6 +19,13 @@ interface UnderwritingWorkbenchProps {
 
 type TabKey = 'all' | 'review_needed' | 'submitted' | 'approved' | 'rejected';
 
+const resolvePillarModalStatus = (status: string): 'PASSED' | 'FLAGGED' | 'FAILED' | 'WAIVED' => {
+  if (status === 'UNDER_REVIEW') return 'FLAGGED';
+  if (status === 'NOT_NEEDED' || status === 'WAIVED') return 'WAIVED';
+  if (status === 'REJECTED' || status === 'FAILED') return 'FAILED';
+  return 'PASSED';
+};
+
 export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
   initialQueue,
   initialSelectedId,
@@ -44,6 +51,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     type: PillarType;
     title: string;
     status: PillarStatus;
+    details?: string;
   } | null>(null);
 
   // Internal note editing per application
@@ -158,6 +166,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
       type: check.type,
       title: check.title,
       status: check.status,
+      details: check.details,
     });
     setIsOverrideOpen(true);
   };
@@ -629,6 +638,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
             productName={activeDossier.productName}
             sumAssured={activeDossier.sumAssured}
             premium={activeDossier.monthlyPremium}
+            tenorYears={activeDossier.tenorYears}
             onConfirmApprove={handleConfirmApprove}
           />
 
@@ -658,17 +668,9 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
               applicationId={activeDossier.id}
               pillarNumber={selectedPillar.index + 1}
               pillarName={selectedPillar.title}
-              currentStatus={
-                selectedPillar.status === 'UNDER_REVIEW'
-                  ? 'FLAGGED'
-                  : selectedPillar.status === 'NOT_NEEDED'
-                  ? 'WAIVED'
-                  : (selectedPillar.status as string) === 'REJECTED' || selectedPillar.status === 'FAILED'
-                  ? 'FAILED'
-                  : selectedPillar.status === 'WAIVED'
-                  ? 'WAIVED'
-                  : 'PASSED'
-              }
+              currentStatus={resolvePillarModalStatus(selectedPillar.status)}
+              monthlyPremium={activeDossier.monthlyPremium}
+              pillarDetailText={selectedPillar.details}
               onSubmit={handleSubmitOverride}
             />
           )}

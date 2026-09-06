@@ -13,6 +13,8 @@ export interface ApproveModalProps {
   productName?: string;
   sumAssured?: string;
   premium?: string;
+  tenorYears?: number;
+  effectiveDate?: string | Date;
   policyNumberPreview?: string;
   underwriterName?: string;
   underwriterNip?: string;
@@ -28,6 +30,8 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
   productName = 'Term Life Guard Plus (10 Tahun)',
   sumAssured = 'Rp 1.000.000.000',
   premium = 'Rp 450.000 / bulan',
+  tenorYears = 10,
+  effectiveDate,
   policyNumberPreview = 'POL-2026-09-8819',
   underwriterName = 'Bayu Pratama',
   underwriterNip = 'UW-2026-042',
@@ -35,6 +39,26 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const start = effectiveDate ? new Date(effectiveDate) : new Date();
+  const validityYears = tenorYears || 10;
+  const end = new Date(start);
+  end.setFullYear(start.getFullYear() + validityYears);
+
+  const formatDateId = (d: Date) =>
+    d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const validityText = `Masa Berlaku Polis: ${formatDateId(start)} s/d ${formatDateId(end)} (${validityYears} Tahun Proteksi Aktif)`;
+
+  const approvalTimestamp =
+    new Intl.DateTimeFormat('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(start) + ' WIB';
 
   useEffect(() => {
     return () => {
@@ -68,16 +92,16 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      size="xl"
+      size="2xl"
       badgeText="UNDERWRITING ACTION • PERSETUJUAN POLIS"
       badgeVariant="emerald"
       title="Persetujuan & Penerbitan Polis Final"
-      subtitle={`Aplikasi #${applicationId} • Pemohon: ${applicantName} • Produk: ${productName}`}
+      subtitle={`Aplikasi #${applicationId} • Tertanggung: ${applicantName} (${applicantEmail}) • Polis aktif akan diterbitkan resmi.`}
       footer={
         <div className="w-full space-y-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="text-slate-500 font-medium">
-              Underwriter: <span className="font-semibold text-slate-800">{underwriterName} (NIP: {underwriterNip})</span> • Waktu Persetujuan: 06 Sep 2026, 08:35 WIB
+              Underwriter: <span className="font-semibold text-slate-800">{underwriterName} (NIP: {underwriterNip})</span> • Waktu Persetujuan: {approvalTimestamp}
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -130,7 +154,7 @@ export const ApproveModal: React.FC<ApproveModalProps> = ({
               </div>
             </div>
             <div className="pt-2 border-t border-slate-200/70 text-[11px] text-slate-500 font-medium">
-              Masa Berlaku Polis: 06 September 2026 s/d 06 September 2036 (10 Tahun Proteksi Aktif)
+              {validityText}
             </div>
           </div>
         </div>

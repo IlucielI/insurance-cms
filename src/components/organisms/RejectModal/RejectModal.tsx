@@ -32,7 +32,7 @@ export const RejectModal: React.FC<RejectModalProps> = ({
   underwriterNip = 'UW-2026-042',
   onSubmitReject,
 }) => {
-  const [ojkCode, setOjkCode] = useState('OJK-UW-403');
+  const [ojkCode, setOjkCode] = useState('OJK-UW-402');
   const [justification, setJustification] = useState(
     'Berdasarkan rekam medis yang dianalisis oleh engine underwriting Core API, pemohon memiliki riwayat penyakit kritis yang berada di luar koridor pertanggungan Secure Life Plus. Kenaikan risiko mortalitas mencapai 3.20x di atas ambang batas maksimum perusahaan (1.80x). Sesuai Bab IV Ketentuan Polis, aplikasi ditolak secara resmi.'
   );
@@ -58,16 +58,16 @@ export const RejectModal: React.FC<RejectModalProps> = ({
 
   const ojkCodeOptions = [
     {
-      value: 'OJK-UW-403',
-      label: '🚫  KODE OJK-UW-403: Riwayat Penyakit Pra-Ada (Pre-Existing Condition) Melebihi Batas Toleransi Risiko',
+      value: 'OJK-UW-402',
+      label: '🚫  KODE OJK-UW-402: Riwayat Penyakit Pra-Ada (Pre-Existing Condition) Melebihi Batas Toleransi Risiko',
     },
     {
       value: 'OJK-UW-401',
-      label: '🚫  KODE OJK-UW-401: Ketidaksesuaian Identitas Dukcapil / Dugaan Manipulasi',
+      label: '🚫  KODE OJK-UW-401: Ketidaksesuaian Identitas Dokumen & Data Dukcapil (Fraud Alert)',
     },
     {
-      value: 'OJK-UW-402',
-      label: '🚫  KODE OJK-UW-402: Rasio Hutang/Pendapatan (DSR) Melampaui Batas (>15%)',
+      value: 'OJK-UW-403',
+      label: '🚫  KODE OJK-UW-403: Rasio Hutang/Pendapatan (DSR > 15%) Melampaui Batas Finansial',
     },
     {
       value: 'OJK-UW-404',

@@ -16,6 +16,10 @@ export interface ManualOverrideModalProps {
   pillarName?: string;
   currentStatus?: PillarStatus;
   currentEngine?: string;
+  monthlyIncome?: string;
+  monthlyPremium?: string;
+  dsrRatio?: number;
+  pillarDetailText?: string;
   underwriterName?: string;
   underwriterNip?: string;
   onSubmit?: (data: {
@@ -33,6 +37,10 @@ export const ManualOverrideModal: React.FC<ManualOverrideModalProps> = ({
   pillarName = 'Verifikasi Pendapatan & Debt-to-Income (DSR)',
   currentStatus = 'PASSED',
   currentEngine = 'System DSR Calculator',
+  monthlyIncome,
+  monthlyPremium,
+  dsrRatio,
+  pillarDetailText,
   underwriterName = 'Bayu Pratama',
   underwriterNip = 'UW-2026-042',
   onSubmit,
@@ -205,7 +213,8 @@ export const ManualOverrideModal: React.FC<ManualOverrideModalProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-600">
-              Gaji Pokok: IDR 25.000.000/bln (Slip Gaji terlampir) • Premi IDR 450.000/bln • Rasio DSR: 1.8% (Batas Maks: 15%)
+              {pillarDetailText ||
+                `Gaji Pokok: ${monthlyIncome || 'IDR 25.000.000/bln (Slip Gaji terlampir)'} • Premi ${monthlyPremium || 'IDR 450.000/bln'} • Rasio DSR: ${dsrRatio !== undefined ? `${dsrRatio}%` : '1.8%'} (Batas Maks: 15%)`}
             </p>
             <p className="text-[10px] text-slate-400">
               Diverifikasi Awal oleh: {currentEngine || 'System DSR Calculator Engine (Auto)'}
