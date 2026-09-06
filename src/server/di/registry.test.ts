@@ -4,12 +4,14 @@ import {
   applicationService,
   productService,
   knowledgeService,
+  healthAuditService,
 } from './registry';
 import { DashboardService } from '../services/dashboard.service';
 import { HealthController } from '../controllers/health.controller';
 import { ApplicationService } from '../services/application.service';
 import { ProductService } from '../services/product.service';
 import { KnowledgeService } from '../services/knowledge.service';
+import { HealthAuditService } from '../services/health-audit.service';
 
 describe('DI Registry', () => {
   it('should export initialized services and controller instances', () => {
@@ -23,6 +25,8 @@ describe('DI Registry', () => {
     expect(productService).toBeInstanceOf(ProductService);
     expect(knowledgeService).toBeDefined();
     expect(knowledgeService).toBeInstanceOf(KnowledgeService);
+    expect(healthAuditService).toBeDefined();
+    expect(healthAuditService).toBeInstanceOf(HealthAuditService);
   });
 
   it('should allow services to successfully fetch data through injected mock repository', async () => {
@@ -40,5 +44,10 @@ describe('DI Registry', () => {
     expect(docs.length).toBeGreaterThan(0);
     const kMetrics = await knowledgeService.getMetrics();
     expect(kMetrics.totalDocuments).toBeGreaterThan(0);
+
+    const healthSummary = await healthAuditService.getSystemOverview();
+    expect(healthSummary.overallStatus).toBe('online');
+    expect(healthSummary.services.length).toBeGreaterThan(0);
+    expect(healthSummary.auditLogs.length).toBeGreaterThan(0);
   });
 });
