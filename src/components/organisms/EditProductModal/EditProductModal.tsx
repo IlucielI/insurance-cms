@@ -97,12 +97,20 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         const factors = updatedPricingRules.ageFactors
           ? [...updatedPricingRules.ageFactors]
           : [];
-        if (factors.length > 0) {
+        if (factors.length === 1) {
+          factors[0] = { ...factors[0], minAge, maxAge };
+        } else if (factors.length > 1) {
           factors[0] = { ...factors[0], minAge };
+          if (factors[0].maxAge < minAge) {
+            factors[0].maxAge = minAge;
+          }
           factors[factors.length - 1] = {
             ...factors[factors.length - 1],
             maxAge,
           };
+          if (factors[factors.length - 1].minAge > maxAge) {
+            factors[factors.length - 1].minAge = maxAge;
+          }
         } else {
           factors.push({ minAge, maxAge, factor: 1.0 });
         }

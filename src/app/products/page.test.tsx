@@ -4,6 +4,7 @@ import ProductsPage from './page';
 import { ProductManagementWorkbench } from './ProductManagementWorkbench';
 import { EditProductModal } from '@/components/organisms/EditProductModal';
 import { PricingRulesModal } from '@/components/organisms/PricingRulesModal';
+import { PremiumSandboxModal } from '@/components/organisms/PremiumSandboxModal';
 import { productService } from '@/server/di';
 import type { InsuranceProduct } from '@/server/repositories/product.repository.interface';
 
@@ -467,5 +468,128 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
 
     expect(discountInput.value).toBe('8');
     expect(nonMcuInput.value).toBe('1000000000');
+  });
+
+  it('should update multi-band ageFactors correctly without mutating internal band bounds in EditProductModal', async () => {
+    const products = await productService.getProducts();
+    const productWithMultiBands: InsuranceProduct = {
+      ...products[0],
+      pricingRules: {
+        ...products[0].pricingRules,
+        ageFactors: [
+          { minAge: 18, maxAge: 30, factor: 1.0 },
+          { minAge: 31, maxAge: 60, factor: 1.5 },
+        ],
+      },
+    };
+    const onSubmitEdit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <EditProductModal
+        isOpen={true}
+        product={productWithMultiBands}
+        onClose={vi.fn()}
+        onSubmitEdit={onSubmitEdit}
+      />
+    );
+
+    const minAgeInput = screen.getByLabelText(/Usia Masuk Min/i);
+    const maxAgeInput = screen.getByLabelText(/Usia Masuk Maks/i);
+
+    fireEvent.change(minAgeInput, { target: { value: '21' } });
+    fireEvent.change(maxAgeInput, { target: { value: '55' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Perbarui & Re-Index Vector DB/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(onSubmitEdit).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedProduct = onSubmitEdit.mock.calls[0][0];
+    const factors = submittedProduct.pricingRules.ageFactors;
+    expect(factors.length).toBe(2);
+    expect(factors[0].minAge).toBe(21);
+    expect(factors[0].maxAge).toBe(30);
+    expect(factors[1].minAge).toBe(31);
+    expect(factors[1].maxAge).toBe(55);
+  });
+
+  it('should trigger onOpenSandbox before calling onClose in PricingRulesModal', () => {
+    const callOrder: string[] = [];
+    const onOpenSandbox = vi.fn(() => {
+      callOrder.push('openSandbox');
+    });
+    const onClose = vi.fn(() => {
+      callOrder.push('close');
+    });
+
+    const mockProduct = {
+      id: 'prod-test-sandbox',
+      name: 'Sandbox Flow Product',
+      slug: 'sandbox-flow',
+      category: 'life' as const,
+      status: 'active' as const,
+      shortDescription: 'Deskripsi',
+      description: 'Deskripsi lengkap',
+      targetCustomer: 'Semua',
+      minSumAssured: 100000000,
+      maxSumAssured: 1000000000,
+      minPaymentTerm: 10,
+      maxPaymentTerm: 20,
+      startingPremium: 200000,
+      benefits: ['Benefit'],
+      exclusions: ['Exclusion'],
+      isFeatured: false,
+      activePoliciesCount: 0,
+      grossWrittenPremium: 0,
+      lossRatio: 0,
+      averageTicketSize: 0,
+      underwritingRulesCount: 0,
+      pricingRules: {
+        baseRate: 0.0023,
+        ageFactors: [{ minAge: 18, maxAge: 60, factor: 1.0 }],
+        genderFactors: { male: 1.0, female: 1.0 },
+        smokerFactors: { yes: 1.35, no: 1.0 },
+        occupationFactors: { low: 1.0, standard: 1.0, high: 1.0 },
+        healthFactors: { low: 1.0, medium: 1.0, high: 1.0 },
+        frequencyLoading: { annual: 1.0, semiAnnual: 1.0, quarterly: 1.0, monthly: 1.0 },
+      },
+    } as unknown as InsuranceProduct;
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={mockProduct}
+        onClose={onClose}
+        onOpenSandbox={onOpenSandbox}
+      />
+    );
+
+    const testBtn = screen.getByRole('button', { name: /Uji di Sandbox/i });
+    fireEvent.click(testBtn);
+
+    expect(onOpenSandbox).toHaveBeenCalledWith('prod-test-sandbox');
+    expect(onClose).toHaveBeenCalled();
+    expect(callOrder).toEqual(['openSandbox', 'close']);
+  });
+
+  it('should render graceful empty state in PremiumSandboxModal when products list is empty', () => {
+    const onClose = vi.fn();
+
+    render(
+      <PremiumSandboxModal
+        isOpen={true}
+        onClose={onClose}
+        products={[]}
+      />
+    );
+
+    expect(screen.getByText(/Tidak Ada Produk Tersedia/i)).toBeDefined();
+    expect(screen.getByText(/Katalog Produk Kosong/i)).toBeDefined();
+
+    const closeBtn = screen.getByRole('button', { name: /Tutup Simulator/i });
+    fireEvent.click(closeBtn);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

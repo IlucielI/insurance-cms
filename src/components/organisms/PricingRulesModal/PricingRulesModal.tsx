@@ -92,8 +92,8 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   };
 
   const handleTestSandbox = () => {
-    onClose();
     onOpenSandbox?.(product.id);
+    onClose();
   };
 
   return (

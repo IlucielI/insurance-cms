@@ -20,7 +20,7 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
   initialProductId,
 }) => {
   const [selectedProductId, setSelectedProductId] = useState<string>(
-    initialProductId || products[0]?.id || 'prod-101'
+    initialProductId || products?.[0]?.id || ''
   );
   const [age, setAge] = useState(30);
   const [isSmoker, setIsSmoker] = useState(false);
@@ -35,6 +35,7 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
   }
 
   const activeProduct = useMemo(() => {
+    if (!products || products.length === 0) return null;
     return products.find((p) => p.id === selectedProductId) || products[0];
   }, [products, selectedProductId]);
 
@@ -86,7 +87,7 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
     return JSON.stringify(
       {
         status: 'success',
-        product_id: activeProduct?.id || 'prod-101',
+        product_id: activeProduct?.id || '',
         premium: {
           annual: calculation.annualPremium,
           monthly_equivalent: calculation.monthlyEquivalent,
@@ -105,6 +106,40 @@ export const PremiumSandboxModal: React.FC<PremiumSandboxModalProps> = ({
 
   const formatRupiah = (val: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+
+  if (!isOpen) return null;
+
+  if (!activeProduct) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="md"
+        badgeText="SANDBOX SIMULATOR"
+        badgeVariant="blue"
+        title="Katalog Produk Kosong"
+      >
+        <div className="py-8 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl font-bold">
+            ⚠️
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-slate-800">Tidak Ada Produk Tersedia</h3>
+            <p className="text-xs text-slate-500">
+              Tidak ada data produk asuransi untuk disimulasikan di sandbox.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
+          >
+            Tutup Simulator
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
