@@ -8,7 +8,7 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className = '', label, helperText, error, showCount, maxLength, value, id, disabled, ...props }, ref) => {
+  ({ className = '', label, helperText, error, showCount, maxLength, value, id, disabled, rows = 3, ...props }, ref) => {
     const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
     const currentLength = typeof value === 'string' ? value.length : 0;
 
@@ -32,7 +32,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           disabled={disabled}
           maxLength={maxLength}
           value={value}
-          rows={props.rows || 3}
+          rows={rows}
           className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed ${
             error
               ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20'
