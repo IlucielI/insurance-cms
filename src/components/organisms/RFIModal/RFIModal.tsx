@@ -39,9 +39,17 @@ export const RFIModal: React.FC<RFIModalProps> = ({
   ]);
   const [deadline, setDeadline] = useState('3');
   const [reminder, setReminder] = useState('h-1');
-  const [customNote, setCustomNote] = useState(
-    `Halo Bapak ${applicantName}, mohon bantuannya untuk mengunggah ulang foto e-KTP Anda dengan pencahayaan yang jelas dan seluruh sudut kartu terlihat, serta melampirkan file slip gaji 3 bulan terakhir. Dokumen ini diperlukan agar kami dapat segera memproses polis Secure Life Plus Anda.`
-  );
+  const defaultNoteForApplicant = (name: string) =>
+    `Halo Bapak/Ibu ${name}, mohon bantuannya untuk mengunggah ulang foto e-KTP Anda dengan pencahayaan yang jelas dan seluruh sudut kartu terlihat, serta melampirkan file slip gaji 3 bulan terakhir. Dokumen ini diperlukan agar kami dapat segera memproses polis Anda.`;
+
+  const [prevApplicant, setPrevApplicant] = useState(applicantName);
+  const [customNote, setCustomNote] = useState(defaultNoteForApplicant(applicantName));
+
+  if (applicantName !== prevApplicant) {
+    setPrevApplicant(applicantName);
+    setCustomNote(defaultNoteForApplicant(applicantName));
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -84,10 +92,16 @@ export const RFIModal: React.FC<RFIModalProps> = ({
     },
   ];
 
+  const formatDeadlineDate = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   const deadlineOptions = [
-    { value: '3', label: '⏱️  3 x 24 Jam (Maks. 09 Sep 2026, 23:59 WIB)' },
-    { value: '7', label: '⏱️  7 x 24 Jam (Maks. 13 Sep 2026, 23:59 WIB)' },
-    { value: '14', label: '⏱️  14 x 24 Jam (Maks. 20 Sep 2026, 23:59 WIB)' },
+    { value: '3', label: `⏱️  3 x 24 Jam (Maks. ${formatDeadlineDate(3)}, 23:59 WIB)` },
+    { value: '7', label: `⏱️  7 x 24 Jam (Maks. ${formatDeadlineDate(7)}, 23:59 WIB)` },
+    { value: '14', label: `⏱️  14 x 24 Jam (Maks. ${formatDeadlineDate(14)}, 23:59 WIB)` },
   ];
 
   const reminderOptions = [

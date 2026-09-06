@@ -72,7 +72,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     return {
       all: queue.length,
       review_needed: queue.filter((d) => d.status === 'under_review').length,
-      submitted: queue.filter((d) => d.status === 'submitted').length,
+      submitted: queue.filter((d) => d.status === 'submitted' || d.status === 'rfi_requested').length,
       approved: queue.filter((d) => d.status === 'approved').length,
       rejected: queue.filter((d) => d.status === 'rejected').length,
     };
@@ -83,7 +83,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     return queue.filter((item) => {
       // Tab filter
       if (activeTab === 'review_needed' && item.status !== 'under_review') return false;
-      if (activeTab === 'submitted' && item.status !== 'submitted') return false;
+      if (activeTab === 'submitted' && item.status !== 'submitted' && item.status !== 'rfi_requested') return false;
       if (activeTab === 'approved' && item.status !== 'approved') return false;
       if (activeTab === 'rejected' && item.status !== 'rejected') return false;
 

@@ -52,6 +52,7 @@ export const RejectModal: React.FC<RejectModalProps> = ({
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
+    setPin('');
     setIsSubmitting(false);
     onClose();
   };
