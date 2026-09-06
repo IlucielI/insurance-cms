@@ -10,7 +10,7 @@ import {
   SimulatedChatResponse,
 } from '@/server/repositories/knowledge.repository.interface';
 import { knowledgeService } from '@/server/di';
-import { UploadKnowledgeModal } from '@/components/organisms/UploadKnowledgeModal';
+import { UploadKnowledgeModal, UploadKnowledgeFileInfo } from '@/components/organisms/UploadKnowledgeModal';
 import { Modal } from '@/components/atoms/Modal';
 import { Button } from '@/components/atoms/Button';
 import { Select } from '@/components/atoms/Select';
@@ -116,14 +116,15 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
   };
 
   // Upload Modal Success Callback
-  const handleUploadSuccess = async () => {
+  const handleUploadSuccess = async (fileInfo?: UploadKnowledgeFileInfo) => {
+    const uploadedName = fileInfo?.fileName || 'Polis_Baku_Secure_Life_Plus_v2.pdf';
+    const cleanTitle = uploadedName.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
     try {
       const newDocPayload: CreateKnowledgeDocDTO = {
-        title: 'Polis Baku Secure Life Plus v2.0 (Standar OJK)',
-        slug: `polis-baku-secure-life-plus-v2-${Date.now()}`,
+        title: `${cleanTitle} (Standar OJK)`,
+        slug: `doc-upload-${Date.now()}`,
         category: 'product',
-        summary:
-          'Klausul baku polis asuransi jiwa Secure Life Plus v2.0 mencakup SLA klaim 3 hari kerja dan batas UP Rp 1 Miliar.',
+        summary: `Klausul baku polis ${cleanTitle} mencakup SLA klaim 3 hari kerja dan batas UP Rp 1 Miliar.`,
         content: `Bab IV Pasal 14 Dokumen Polis Baku:
 Klaim meninggal dunia memiliki Garansi SLA Pencairan Maksimal 3 Hari Kerja ke rekening ahli waris yang sah setelah berkas lengkap terverifikasi tim underwriting.
 Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas non-MCU.`,
@@ -132,7 +133,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
       const created = await knowledgeService.createDocument(newDocPayload);
       setDocuments((prev) => [created, ...prev]);
       await refreshMetrics();
-      showToast('Dokumen "Polis_Baku_Secure_Life_Plus_v2.pdf" berhasil dipublikasikan ke Knowledge AI Assistant.');
+      showToast(`Dokumen "${uploadedName}" berhasil dipublikasikan ke Knowledge AI Assistant.`);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Gagal mempublikasikan dokumen.');
     }
@@ -175,19 +176,27 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
     setIsSubmitting(true);
 
     try {
+      const normalizedSlug = formData.slug.trim()
+        ? formData.slug
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '')
+        : undefined;
+
       const tags = formData.tagsText
         .split(',')
-        .map((t) => t.trim())
+        .map((t) => t.trim().toLowerCase())
         .filter(Boolean);
 
       if (editingDoc) {
         // Update
         const payload: UpdateKnowledgeDocDTO = {
-          title: formData.title,
-          slug: formData.slug,
+          title: formData.title.trim(),
+          slug: normalizedSlug,
           category: formData.category,
-          summary: formData.summary,
-          content: formData.content,
+          summary: formData.summary.trim(),
+          content: formData.content.trim(),
           tags,
         };
         const updated = await knowledgeService.updateDocument(editingDoc.id, payload);
@@ -196,11 +205,11 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
       } else {
         // Create
         const payload: CreateKnowledgeDocDTO = {
-          title: formData.title,
-          slug: formData.slug || undefined,
+          title: formData.title.trim(),
+          slug: normalizedSlug,
           category: formData.category,
-          summary: formData.summary,
-          content: formData.content,
+          summary: formData.summary.trim(),
+          content: formData.content.trim(),
           tags,
         };
         const created = await knowledgeService.createDocument(payload);
@@ -221,8 +230,15 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
     }
   };
 
-  // Delete Document
+  // Delete Document with Confirmation Guard
   const handleDeleteDoc = async (id: string, title: string) => {
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(`Apakah Anda yakin ingin menghapus dokumen "${title}" beserta indeks vektornya?`)
+    ) {
+      return;
+    }
+
     try {
       await knowledgeService.deleteDocument(id);
       setDocuments((prev) => prev.filter((d) => d.id !== id));
@@ -255,6 +271,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
 
   // Run AI Copilot RAG Simulation
   const handleRunCopilot = async (queryText?: string) => {
+    if (isLoadingChat) return;
     const q = (queryText ?? chatQuery).trim();
     if (!q) return;
 
@@ -767,11 +784,12 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                       <button
                         key={p}
                         type="button"
+                        disabled={isLoadingChat}
                         onClick={() => {
                           setChatQuery(p);
                           handleRunCopilot(p);
                         }}
-                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 transition-colors text-left cursor-pointer"
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 transition-colors text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {p}
                       </button>

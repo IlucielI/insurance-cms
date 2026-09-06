@@ -4,10 +4,15 @@ import React, { useState } from 'react';
 import { Modal } from '@/components/atoms/Modal';
 import { Button } from '@/components/atoms/Button';
 
+export interface UploadKnowledgeFileInfo {
+  fileName: string;
+  fileSize: string;
+}
+
 export interface UploadKnowledgeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (fileInfo?: UploadKnowledgeFileInfo) => void;
 }
 
 export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
@@ -16,7 +21,7 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
   onSuccess,
 }) => {
   const [fileName, setFileName] = useState('Polis_Baku_Secure_Life_Plus_v2.pdf');
-  const [fileSize] = useState('3.4 MB');
+  const [fileSize, setFileSize] = useState('3.4 MB');
   const [pageCount] = useState(28);
   const [wordCount] = useState('14.800');
   const [chunkCount] = useState(48);
@@ -35,6 +40,10 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
+      if (file.size) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        setFileSize(`${mb} MB`);
+      }
     }
   };
 
@@ -43,7 +52,7 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
     // Simulate brief pipeline completion
     timerRef.current = setTimeout(() => {
       setIsPublishing(false);
-      onSuccess?.();
+      onSuccess?.({ fileName, fileSize });
       onClose();
     }, 600);
   };

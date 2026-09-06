@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import KnowledgePage from './page';
 import { KnowledgeBaseWorkbench } from './KnowledgeBaseWorkbench';
@@ -175,7 +175,7 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     });
   });
 
-  it('should trigger re-index and delete actions on a document', async () => {
+  it('should trigger re-index and delete actions on a document with confirmation', async () => {
     const docs = await knowledgeService.getDocuments();
     const metrics = await knowledgeService.getMetrics();
 
@@ -191,13 +191,22 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
       expect(screen.getByText(/berhasil di-reindex/i)).toBeDefined();
     });
 
-    // Delete
+    // Delete cancelled by user (confirm returns false)
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const deleteBtn = screen.getByLabelText(/Hapus dokumen Kepatuhan Anti-Pencucian Uang/i);
+    fireEvent.click(deleteBtn);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(screen.queryByText(/berhasil dihapus/i)).toBeNull();
+
+    // Delete confirmed by user (confirm returns true)
+    confirmSpy.mockReturnValue(true);
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {
       expect(screen.getByText(/berhasil dihapus/i)).toBeDefined();
     });
+    confirmSpy.mockRestore();
   });
 
   it('should run interactive AI Underwriting Copilot RAG queries and display citations', async () => {
@@ -245,7 +254,7 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     fireEvent.click(historyItem);
   });
 
-  it('should open upload PDF modal, inspect 4 pipeline steps, and publish document', async () => {
+  it('should open upload PDF modal, allow changing file, inspect steps, and publish document', async () => {
     const docs = await knowledgeService.getDocuments();
     const metrics = await knowledgeService.getMetrics();
 
@@ -262,11 +271,54 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     expect(screen.getByText(/Generasi Embedding Vektor/i)).toBeDefined();
     expect(screen.getByText('Publikasi Live ke RAG Query Engine')).toBeDefined();
 
+    // Change file via input
+    const fileInput = screen.getByLabelText(/Upload PDF Berkas Polis/i);
+    const mockFile = new File(['dummy-content'], 'Klausul_Khusus_Kendaraan.pdf', {
+      type: 'application/pdf',
+    });
+    fireEvent.change(fileInput, { target: { files: [mockFile] } });
+
+    expect(screen.getByText('Klausul_Khusus_Kendaraan.pdf')).toBeDefined();
+
     const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
     fireEvent.click(publishBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/berhasil dipublikasikan/i)).toBeDefined();
+      expect(screen.getByText(/Klausul_Khusus_Kendaraan\.pdf/i)).toBeDefined();
+    });
+  });
+
+  it('should normalize slug and tags when creating a document', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const addBtn = screen.getByRole('button', { name: /Tambah Dokumen Baru/i });
+    fireEvent.click(addBtn);
+
+    const titleInput = screen.getByPlaceholderText(/misal: Pedoman Limit Uang Pertanggungan/i);
+    fireEvent.change(titleInput, { target: { value: 'Pedoman Normalisasi Data 2026' } });
+
+    const slugInput = screen.getByPlaceholderText(/misal: pedoman-limit-uang-pertanggungan/i);
+    fireEvent.change(slugInput, { target: { value: '  Pedoman Normalisasi Data 2026!!  ' } });
+
+    const summaryInput = screen.getByPlaceholderText(/Ringkasan 1-2 kalimat/i);
+    fireEvent.change(summaryInput, { target: { value: 'Summary for normalization' } });
+
+    const contentInput = screen.getByPlaceholderText(/Masukkan ketentuan detail SOP/i);
+    fireEvent.change(contentInput, { target: { value: 'Konten dokumen testing normalisasi' } });
+
+    const tagsInput = screen.getByPlaceholderText(/misal: underwriting, up, medical, limit/i);
+    fireEvent.change(tagsInput, { target: { value: ' UNDERWRITING , OJK-STANDARD , Risk ' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Indeks Dokumen ✨/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Pedoman Normalisasi Data 2026/i).length).toBeGreaterThan(0);
     });
   });
 });
