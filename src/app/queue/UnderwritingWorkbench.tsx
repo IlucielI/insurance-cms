@@ -51,7 +51,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     type: PillarType;
     title: string;
     status: PillarStatus;
-    details?: string;
+    details: string;
   } | null>(null);
 
   // Internal note editing per application

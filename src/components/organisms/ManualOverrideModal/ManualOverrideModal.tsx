@@ -55,6 +55,16 @@ export const ManualOverrideModal: React.FC<ManualOverrideModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const renderPillarDetail = () => {
+    if (pillarDetailText) return pillarDetailText;
+    const parts: string[] = [];
+    if (monthlyIncome) parts.push(`Gaji Pokok: ${monthlyIncome}`);
+    if (monthlyPremium) parts.push(`Premi: ${monthlyPremium}`);
+    if (dsrRatio !== undefined) parts.push(`Rasio DSR: ${dsrRatio}% (Batas Maks: 15%)`);
+    if (parts.length > 0) return parts.join(' • ');
+    return 'Detail evaluasi pilar tidak tersedia atau sedang diverifikasi.';
+  };
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -213,8 +223,7 @@ export const ManualOverrideModal: React.FC<ManualOverrideModalProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-600">
-              {pillarDetailText ||
-                `Gaji Pokok: ${monthlyIncome || 'IDR 25.000.000/bln (Slip Gaji terlampir)'} • Premi ${monthlyPremium || 'IDR 450.000/bln'} • Rasio DSR: ${dsrRatio !== undefined ? `${dsrRatio}%` : '1.8%'} (Batas Maks: 15%)`}
+              {renderPillarDetail()}
             </p>
             <p className="text-[10px] text-slate-400">
               Diverifikasi Awal oleh: {currentEngine || 'System DSR Calculator Engine (Auto)'}
