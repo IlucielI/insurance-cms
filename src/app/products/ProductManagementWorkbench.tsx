@@ -125,53 +125,83 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
       },
     };
 
-    const created = await productService.createProduct(createPayload);
-    setProducts((prev) => [...prev, created]);
-    await refreshMetrics();
-    showToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
-    setIsCreateModalOpen(false);
+    try {
+      const created = await productService.createProduct(createPayload);
+      setProducts((prev) => [...prev, created]);
+      await refreshMetrics();
+      showToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
+      setIsCreateModalOpen(false);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Gagal menambahkan produk baru.';
+      showToast(message);
+      throw err;
+    }
   };
 
   // Handle Edit Product
   const handleEditProduct = async (updated: InsuranceProduct) => {
-    const updatePayload: UpdateProductDTO = {
-      name: updated.name,
-      slug: updated.slug,
-      category: updated.category,
-      status: updated.status,
-      shortDescription: updated.shortDescription,
-      minSumAssured: updated.minSumAssured,
-      maxSumAssured: updated.maxSumAssured,
-      startingPremium: updated.startingPremium,
-    };
+    try {
+      const updatePayload: UpdateProductDTO = {
+        name: updated.name,
+        slug: updated.slug,
+        category: updated.category,
+        status: updated.status,
+        shortDescription: updated.shortDescription,
+        minSumAssured: updated.minSumAssured,
+        maxSumAssured: updated.maxSumAssured,
+        startingPremium: updated.startingPremium,
+      };
 
-    const res = await productService.updateProduct(updated.id, updatePayload);
-    setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
-    await refreshMetrics();
-    showToast(`Produk "${res.name}" berhasil diperbarui.`);
-    setSelectedProductForEdit(null);
+      const res = await productService.updateProduct(updated.id, updatePayload);
+      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      await refreshMetrics();
+      showToast(`Produk "${res.name}" berhasil diperbarui.`);
+      setSelectedProductForEdit(null);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Gagal memperbarui konfigurasi produk.';
+      showToast(message);
+      throw err;
+    }
   };
 
   // Handle Archive Product
   const handleArchiveProduct = async (productId: string) => {
-    const updatePayload: UpdateProductDTO = { status: 'archived' };
-    const res = await productService.updateProduct(productId, updatePayload);
-    setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
-    await refreshMetrics();
-    showToast(`Produk "${res.name}" berhasil diarsipkan.`);
-    setSelectedProductForEdit(null);
+    try {
+      const updatePayload: UpdateProductDTO = { status: 'archived' };
+      const res = await productService.updateProduct(productId, updatePayload);
+      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      await refreshMetrics();
+      showToast(`Produk "${res.name}" berhasil diarsipkan.`);
+      setSelectedProductForEdit(null);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Gagal mengarsipkan produk.';
+      showToast(message);
+      throw err;
+    }
   };
 
   // Handle Save Pricing Rules
   const handleSavePricing = async (updated: InsuranceProduct) => {
-    const updatePayload: UpdateProductDTO = {
-      pricingRules: updated.pricingRules,
-    };
-    const res = await productService.updateProduct(updated.id, updatePayload);
-    setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
-    await refreshMetrics();
-    showToast(`Aturan pricing untuk "${res.name}" berhasil diperbarui.`);
-    setSelectedProductForPricing(null);
+    try {
+      const updatePayload: UpdateProductDTO = {
+        pricingRules: updated.pricingRules,
+      };
+      const res = await productService.updateProduct(updated.id, updatePayload);
+      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      await refreshMetrics();
+      showToast(`Aturan pricing untuk "${res.name}" berhasil diperbarui.`);
+      setSelectedProductForPricing(null);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Gagal memperbarui aturan pricing.';
+      showToast(message);
+      throw err;
+    }
   };
 
   // Toggle Status

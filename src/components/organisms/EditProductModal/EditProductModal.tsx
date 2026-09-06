@@ -38,12 +38,18 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [maxSumAssured, setMaxSumAssured] = useState(
     product?.maxSumAssured || 2000000000
   );
-  const [minAge, setMinAge] = useState(
-    product?.pricingRules?.ageFactors?.[0]?.minAge || 18
-  );
-  const [maxAge, setMaxAge] = useState(
-    product?.pricingRules?.ageFactors?.[product.pricingRules.ageFactors.length - 1]?.maxAge || 60
-  );
+  const getMinAge = (p?: InsuranceProduct | null) =>
+    p?.pricingRules?.ageFactors?.[0]?.minAge || 18;
+
+  const getMaxAge = (p?: InsuranceProduct | null) => {
+    const factors = p?.pricingRules?.ageFactors;
+    return factors && factors.length > 0
+      ? factors[factors.length - 1]?.maxAge || 60
+      : 60;
+  };
+
+  const [minAge, setMinAge] = useState(getMinAge(product));
+  const [maxAge, setMaxAge] = useState(getMaxAge(product));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -65,8 +71,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setBasePremiumMonthly(product.startingPremium || 250000);
       setMinSumAssured(product.minSumAssured);
       setMaxSumAssured(product.maxSumAssured);
-      setMinAge(product.pricingRules?.ageFactors?.[0]?.minAge || 18);
-      setMaxAge(product.pricingRules?.ageFactors?.[product.pricingRules.ageFactors.length - 1]?.maxAge || 60);
+      setMinAge(getMinAge(product));
+      setMaxAge(getMaxAge(product));
     }
   }
 
@@ -283,6 +289,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   onChange={(e) => setMinAge(Number(e.target.value))}
                   className="w-1/2 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900"
                   placeholder="Min"
+                  aria-label="Usia Masuk Min"
                 />
                 <span className="text-slate-400">-</span>
                 <input
@@ -293,6 +300,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   onChange={(e) => setMaxAge(Number(e.target.value))}
                   className="w-1/2 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900"
                   placeholder="Maks"
+                  aria-label="Usia Masuk Maks"
                 />
               </div>
             </div>

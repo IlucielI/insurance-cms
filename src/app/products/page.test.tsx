@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ProductsPage from './page';
 import { ProductManagementWorkbench } from './ProductManagementWorkbench';
+import { EditProductModal } from '@/components/organisms/EditProductModal';
 import { productService } from '@/server/di';
+import type { InsuranceProduct } from '@/server/repositories/product.repository.interface';
 
 describe('ProductsPage & ProductManagementWorkbench', () => {
   it('should render the Server Component ProductsPage correctly', async () => {
@@ -166,7 +168,7 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/sudah terdaftar/i)).toBeDefined();
+      expect(screen.getAllByText(/sudah terdaftar/i).length).toBeGreaterThan(0);
     });
 
     // Cancel modal
@@ -254,5 +256,73 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     await waitFor(() => {
       expect(screen.queryByText(/Sandbox Simulator Kalkulasi Premi Aktuarial/i)).toBeNull();
     });
+  });
+
+  it('should render EditProductModal gracefully when product.pricingRules is undefined', () => {
+    const productWithoutPricing = {
+      id: 'prod-no-pricing',
+      name: 'Accident Guard Basic',
+      slug: 'accident-guard-basic',
+      category: 'health' as const,
+      status: 'active' as const,
+      shortDescription: 'Asuransi kecelakaan tanpa pricing rules terdefinisi',
+      description: 'Deskripsi lengkap',
+      targetCustomer: 'Semua individu',
+      minSumAssured: 50000000,
+      maxSumAssured: 500000000,
+      minPaymentTerm: 1,
+      maxPaymentTerm: 10,
+      startingPremium: 100000,
+      benefits: ['Santunan kecelakaan'],
+      exclusions: ['Tindakan kriminal'],
+      isFeatured: false,
+      activePoliciesCount: 0,
+      grossWrittenPremium: 0,
+      lossRatio: 0,
+      averageTicketSize: 0,
+      underwritingRulesCount: 0,
+    } as unknown as InsuranceProduct;
+
+    render(
+      <EditProductModal
+        isOpen={true}
+        product={productWithoutPricing}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Edit Produk: Accident Guard Basic/i)).toBeDefined();
+    const minAgeInput = screen.getByLabelText(/Usia Masuk Min/i) as HTMLInputElement;
+    const maxAgeInput = screen.getByLabelText(/Usia Masuk Maks/i) as HTMLInputElement;
+    expect(minAgeInput.value).toBe('18');
+    expect(maxAgeInput.value).toBe('60');
+  });
+
+  it('should handle API failure gracefully when updating product fails with network error', async () => {
+    const products = await productService.getProducts();
+    const metrics = await productService.getProductMetrics();
+
+    const spy = vi
+      .spyOn(productService, 'updateProduct')
+      .mockRejectedValueOnce(new Error('Network connection timeout'));
+
+    render(
+      <ProductManagementWorkbench
+        initialProducts={products}
+        initialMetrics={metrics}
+      />
+    );
+
+    const editBtns = screen.getAllByRole('button', { name: /Edit Konfigurasi/i });
+    fireEvent.click(editBtns[0]);
+
+    const saveBtn = screen.getByRole('button', { name: /Perbarui & Re-Index Vector DB/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Network connection timeout/i).length).toBeGreaterThan(0);
+    });
+
+    spy.mockRestore();
   });
 });
