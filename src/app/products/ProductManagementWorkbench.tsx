@@ -151,6 +151,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         minSumAssured: updated.minSumAssured,
         maxSumAssured: updated.maxSumAssured,
         startingPremium: updated.startingPremium,
+        pricingRules: updated.pricingRules,
       };
 
       const res = await productService.updateProduct(updated.id, updatePayload);

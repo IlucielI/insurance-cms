@@ -84,10 +84,49 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setErrorMsg('Nama produk wajib diisi.');
       return;
     }
+    if (minAge > maxAge) {
+      setErrorMsg('Batas usia masuk minimum tidak boleh lebih besar dari usia maksimum.');
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
+      let updatedPricingRules = product.pricingRules;
+      if (updatedPricingRules) {
+        const factors = updatedPricingRules.ageFactors
+          ? [...updatedPricingRules.ageFactors]
+          : [];
+        if (factors.length > 0) {
+          factors[0] = { ...factors[0], minAge };
+          factors[factors.length - 1] = {
+            ...factors[factors.length - 1],
+            maxAge,
+          };
+        } else {
+          factors.push({ minAge, maxAge, factor: 1.0 });
+        }
+        updatedPricingRules = {
+          ...updatedPricingRules,
+          ageFactors: factors,
+        };
+      } else {
+        updatedPricingRules = {
+          baseRate: 0.0023,
+          ageFactors: [{ minAge, maxAge, factor: 1.0 }],
+          genderFactors: { male: 1.0, female: 0.95 },
+          smokerFactors: { yes: 1.35, no: 1.0 },
+          occupationFactors: { low: 1.0, standard: 1.2, high: 1.5 },
+          healthFactors: { low: 1.0, medium: 1.3, high: 1.8 },
+          frequencyLoading: {
+            annual: 1.0,
+            semiAnnual: 1.03,
+            quarterly: 1.05,
+            monthly: 1.08,
+          },
+        };
+      }
+
       await onSubmitEdit?.({
         ...product,
         name,
@@ -97,6 +136,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         startingPremium: basePremiumMonthly,
         minSumAssured,
         maxSumAssured,
+        pricingRules: updatedPricingRules,
       });
       onClose();
     } catch (err: unknown) {

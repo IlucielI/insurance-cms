@@ -325,4 +325,67 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
 
     spy.mockRestore();
   });
+
+  it('should forward updated minAge and maxAge in pricingRules payload when saving EditProductModal', async () => {
+    const products = await productService.getProducts();
+    const product = products[0];
+    const onSubmitEdit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <EditProductModal
+        isOpen={true}
+        product={product}
+        onClose={vi.fn()}
+        onSubmitEdit={onSubmitEdit}
+      />
+    );
+
+    const minAgeInput = screen.getByLabelText(/Usia Masuk Min/i);
+    const maxAgeInput = screen.getByLabelText(/Usia Masuk Maks/i);
+
+    fireEvent.change(minAgeInput, { target: { value: '21' } });
+    fireEvent.change(maxAgeInput, { target: { value: '55' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Perbarui & Re-Index Vector DB/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(onSubmitEdit).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedProduct = onSubmitEdit.mock.calls[0][0];
+    const ageFactors = submittedProduct.pricingRules.ageFactors;
+    expect(ageFactors[0].minAge).toBe(21);
+    expect(ageFactors[ageFactors.length - 1].maxAge).toBe(55);
+  });
+
+  it('should display error when minAge is greater than maxAge in EditProductModal', async () => {
+    const products = await productService.getProducts();
+    const product = products[0];
+    const onSubmitEdit = vi.fn();
+
+    render(
+      <EditProductModal
+        isOpen={true}
+        product={product}
+        onClose={vi.fn()}
+        onSubmitEdit={onSubmitEdit}
+      />
+    );
+
+    const minAgeInput = screen.getByLabelText(/Usia Masuk Min/i);
+    const maxAgeInput = screen.getByLabelText(/Usia Masuk Maks/i);
+
+    fireEvent.change(minAgeInput, { target: { value: '65' } });
+    fireEvent.change(maxAgeInput, { target: { value: '50' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Perbarui & Re-Index Vector DB/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Batas usia masuk minimum tidak boleh lebih besar dari usia maksimum./i)).toBeDefined();
+    });
+
+    expect(onSubmitEdit).not.toHaveBeenCalled();
+  });
 });
