@@ -29,13 +29,13 @@ export const Topbar: React.FC<TopbarProps> = ({
       <div className="flex items-center gap-3.5">
         {/* Omnisearch */}
         <div className="w-[260px]">
-          <SearchInput placeholder="Cari polis, NIK, produk... (⌘K)" />
+          <SearchInput placeholder="Cari metrik, polis, atau underwriting..." />
         </div>
 
         {/* Global Live Status Pill */}
-        <StatusPill label="Core API v1.2 • Live" status="online" />
+        <StatusPill label="Core API v1.2 Online" status="online" />
 
-        {/* Unified Sync Button */}
+        {/* Unified Refresh Button */}
         <Button
           variant="secondary"
           size="sm"
@@ -43,7 +43,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           className="border-slate-300 text-slate-800 font-semibold"
         >
           <span>🔄</span>
-          <span>Sync Data</span>
+          <span>Refresh Data</span>
         </Button>
 
         {/* Notification Bell */}
