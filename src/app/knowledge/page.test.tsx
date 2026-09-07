@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import KnowledgePage from './page';
 import { KnowledgeBaseWorkbench } from './KnowledgeBaseWorkbench';
+import { UploadKnowledgeModal } from '@/components/organisms/UploadKnowledgeModal';
 import { knowledgeService } from '@/server/di';
 
 describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
@@ -10,11 +11,11 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     render(Component);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Knowledge Base AI & Underwriting Copilot' })
+      screen.getByRole('heading', { level: 1, name: /Knowledge Base AI/i })
     ).toBeDefined();
     expect(screen.getByText('Pedoman Batas Uang Pertanggungan & Medical Check-Up')).toBeDefined();
     expect(screen.getByText('Prosedur Verifikasi Dokumen Dukcapil & Biometrik')).toBeDefined();
-    expect(screen.getByText(/Total Vektor Chunks/i)).toBeDefined();
+    expect(screen.getByText(/Total Knowledge Chunks/i)).toBeDefined();
   });
 
   it('should filter documents by category tabs and search query', async () => {
@@ -175,7 +176,7 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     });
   });
 
-  it('should trigger re-index and delete actions on a document', async () => {
+  it('should trigger re-index and delete actions on a document with confirmation', async () => {
     const docs = await knowledgeService.getDocuments();
     const metrics = await knowledgeService.getMetrics();
 
@@ -191,13 +192,22 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
       expect(screen.getByText(/berhasil di-reindex/i)).toBeDefined();
     });
 
-    // Delete
+    // Delete cancelled by user (confirm returns false)
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const deleteBtn = screen.getByLabelText(/Hapus dokumen Kepatuhan Anti-Pencucian Uang/i);
+    fireEvent.click(deleteBtn);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(screen.queryByText(/berhasil dihapus/i)).toBeNull();
+
+    // Delete confirmed by user (confirm returns true)
+    confirmSpy.mockReturnValue(true);
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {
       expect(screen.getByText(/berhasil dihapus/i)).toBeDefined();
     });
+    confirmSpy.mockRestore();
   });
 
   it('should run interactive AI Underwriting Copilot RAG queries and display citations', async () => {
@@ -212,7 +222,7 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     const copilotTab = screen.getByRole('button', { name: /AI Underwriting Copilot Playground/i });
     fireEvent.click(copilotTab);
 
-    expect(screen.getByText('Simulasi Inferensi RAG & Underwriting Copilot')).toBeDefined();
+    expect(screen.getByText('Live RAG Semantic Retrieval Tester')).toBeDefined();
 
     // Click sample prompt
     const samplePromptBtn = screen.getByRole('button', {
@@ -221,8 +231,8 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     fireEvent.click(samplePromptBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Jawaban AI Underwriting Copilot')).toBeDefined();
-      expect(screen.getByText(/Sumber Rujukan Dokumen/i)).toBeDefined();
+      expect(screen.getByText(/Sintesis Jawaban AI/i)).toBeDefined();
+      expect(screen.getByText(/Hasil Retrieval/i)).toBeDefined();
       expect(screen.getAllByText(/Match/i).length).toBeGreaterThan(0);
     });
 
@@ -243,5 +253,122 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
     // Click recent query history item
     const historyItem = screen.getByText(/💬 Bagaimana alur klaim rawat inap\?/i);
     fireEvent.click(historyItem);
+  });
+
+  it('should open upload PDF modal, allow changing file, inspect steps, and publish document', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const uploadBtn = screen.getByRole('button', { name: /Upload Dokumen Polis/i });
+    fireEvent.click(uploadBtn);
+
+    expect(screen.getByText('Unggah Dokumen Polis & Pipeline Embedding')).toBeDefined();
+    expect(screen.getByText('Ekstraksi Teks & OCR Engine')).toBeDefined();
+    expect(screen.getByText('Semantic Chunking & Overlapping')).toBeDefined();
+    expect(screen.getByText(/Generasi Embedding Vektor/i)).toBeDefined();
+    expect(screen.getByText('Publikasi Live ke RAG Query Engine')).toBeDefined();
+
+    // Change file via input
+    const fileInput = screen.getByLabelText(/Upload PDF Berkas Polis/i);
+    const mockFile = new File(['dummy-content'], 'Klausul_Khusus_Kendaraan.pdf', {
+      type: 'application/pdf',
+    });
+    fireEvent.change(fileInput, { target: { files: [mockFile] } });
+
+    expect(screen.getByText('Klausul_Khusus_Kendaraan.pdf')).toBeDefined();
+
+    const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+    fireEvent.click(publishBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Klausul_Khusus_Kendaraan\.pdf/i)).toBeDefined();
+    });
+  });
+
+  it('should normalize slug and tags when creating a document', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const addBtn = screen.getByRole('button', { name: /Tambah Dokumen Baru/i });
+    fireEvent.click(addBtn);
+
+    const titleInput = screen.getByPlaceholderText(/misal: Pedoman Limit Uang Pertanggungan/i);
+    fireEvent.change(titleInput, { target: { value: 'Pedoman Normalisasi Data 2026' } });
+
+    const slugInput = screen.getByPlaceholderText(/misal: pedoman-limit-uang-pertanggungan/i);
+    fireEvent.change(slugInput, { target: { value: '  Pedoman Normalisasi Data 2026!!  ' } });
+
+    const summaryInput = screen.getByPlaceholderText(/Ringkasan 1-2 kalimat/i);
+    fireEvent.change(summaryInput, { target: { value: 'Summary for normalization' } });
+
+    const contentInput = screen.getByPlaceholderText(/Masukkan ketentuan detail SOP/i);
+    fireEvent.change(contentInput, { target: { value: 'Konten dokumen testing normalisasi' } });
+
+    const tagsInput = screen.getByPlaceholderText(/misal: underwriting, up, medical, limit/i);
+    fireEvent.change(tagsInput, { target: { value: ' UNDERWRITING , OJK-STANDARD , Risk ' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Indeks Dokumen ✨/i });
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Pedoman Normalisasi Data 2026/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('should abort publishing and cancel timer when modal is closed manually before completion', () => {
+    vi.useFakeTimers();
+    try {
+      const onSuccess = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <UploadKnowledgeModal isOpen={true} onClose={onClose} onSuccess={onSuccess} />
+      );
+
+      const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+      fireEvent.click(publishBtn);
+
+      // User closes dialog before 600ms timer completes
+      const closeButtons = screen.getAllByRole('button', { name: /Tutup Dialog/i });
+      fireEvent.click(closeButtons[0]);
+
+      expect(onClose).toHaveBeenCalled();
+
+      // Advance past the 600ms timer duration
+      vi.advanceTimersByTime(1000);
+
+      // Callback must not fire since timer was aborted
+      expect(onSuccess).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should fallback to default document info when fileInfo is omitted in upload success', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const uploadBtn = screen.getByRole('button', { name: /Upload Dokumen Polis/i });
+    fireEvent.click(uploadBtn);
+
+    // Click publish directly with default file
+    const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+    fireEvent.click(publishBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Polis_Baku_Secure_Life_Plus_v2\.pdf/i)).toBeDefined();
+    });
   });
 });

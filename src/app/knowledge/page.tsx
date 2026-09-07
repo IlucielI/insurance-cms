@@ -10,7 +10,7 @@ export default async function KnowledgePage() {
   ]);
 
   return (
-    <CMSLayout pageTitle="Knowledge Base AI & Underwriting Copilot" currentPath="/knowledge">
+    <CMSLayout pageTitle="Knowledge Base AI & pgvector RAG Manager" currentPath="/knowledge">
       <KnowledgeBaseWorkbench
         initialDocuments={documents}
         initialMetrics={metrics}
