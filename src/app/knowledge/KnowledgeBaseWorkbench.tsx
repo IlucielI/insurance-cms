@@ -116,19 +116,32 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
   };
 
   // Upload Modal Success Callback
+  // Simulation Trade-off & Guardrail:
+  // In demo/simulated mode, document title, slug, summary, and content provide a structured template
+  // derived from the uploaded filename. In a production environment connected to Core API,
+  // this payload is extracted server-side via the OCR & chunking pipeline (POST /api/v1/documents/ingest)
+  // and indexed into PostgreSQL pgvector table.
   const handleUploadSuccess = async (fileInfo?: UploadKnowledgeFileInfo) => {
-    const uploadedName = fileInfo?.fileName || 'Polis_Baku_Secure_Life_Plus_v2.pdf';
+    const uploadedName = fileInfo?.fileName?.trim() || 'Polis_Baku_Secure_Life_Plus_v2.pdf';
     const cleanTitle = uploadedName.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+    const fileSlug = cleanTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const timestampSuffix = Date.now().toString().slice(-6);
+
     try {
       const newDocPayload: CreateKnowledgeDocDTO = {
         title: `${cleanTitle} (Standar OJK)`,
-        slug: `doc-upload-${Date.now()}`,
+        slug: `${fileSlug || 'dokumen-polis'}-${timestampSuffix}`,
         category: 'product',
-        summary: `Klausul baku polis ${cleanTitle} mencakup SLA klaim 3 hari kerja dan batas UP Rp 1 Miliar.`,
-        content: `Bab IV Pasal 14 Dokumen Polis Baku:
+        summary: `Klausul baku polis ${cleanTitle} mencakup ketentuan pertanggungan, SLA klaim garansi pencairan, dan parameter batas non-MCU.`,
+        content: `Bab IV Dokumen ${cleanTitle}:
+1. Ketentuan Klaim & SLA:
 Klaim meninggal dunia memiliki Garansi SLA Pencairan Maksimal 3 Hari Kerja ke rekening ahli waris yang sah setelah berkas lengkap terverifikasi tim underwriting.
-Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas non-MCU.`,
-        tags: ['ojk', 'polis-baku', 'life-insurance', 'sla-klaim', 'pgvector'],
+2. Pemeriksaan Kesehatan:
+Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas non-MCU sesuai regulasi aktuaria.`,
+        tags: ['ojk', 'polis-baku', fileSlug || 'knowledge-doc', 'pgvector'],
       };
       const created = await knowledgeService.createDocument(newDocPayload);
       setDocuments((prev) => [created, ...prev]);

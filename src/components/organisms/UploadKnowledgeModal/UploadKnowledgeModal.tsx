@@ -29,12 +29,30 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
+    // Cancel timer if modal is closed while publishing is in progress
+    if (!isOpen && timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      setIsPublishing(false);
+    }
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, []);
+  }, [isOpen]);
+
+  const handleCancelAndClose = () => {
+    // Trade-off: Manually aborting publishing cancels the background timer
+    // and prevents onSuccess/onClose callbacks from firing on an unmounted/hidden modal.
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsPublishing(false);
+    onClose();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,8 +67,9 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
 
   const handlePublish = async () => {
     setIsPublishing(true);
-    // Simulate brief pipeline completion
+    // Simulate brief pipeline completion (600ms ingestion window)
     timerRef.current = setTimeout(() => {
+      timerRef.current = null;
       setIsPublishing(false);
       onSuccess?.({ fileName, fileSize });
       onClose();
@@ -60,7 +79,7 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCancelAndClose}
       size="2xl"
       badgeText="KNOWLEDGE INGESTION • RAG PIPELINE"
       badgeVariant="indigo"
@@ -73,7 +92,7 @@ export const UploadKnowledgeModal: React.FC<UploadKnowledgeModalProps> = ({
             <span>Dokumen terenkripsi AES-256 &amp; disimpan di repositori dokumen privat Core API.</span>
           </p>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            <Button type="button" variant="outline" size="sm" onClick={handleCancelAndClose}>
               Tutup Dialog
             </Button>
             <Button

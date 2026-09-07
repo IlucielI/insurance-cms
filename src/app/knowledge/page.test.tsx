@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import KnowledgePage from './page';
 import { KnowledgeBaseWorkbench } from './KnowledgeBaseWorkbench';
+import { UploadKnowledgeModal } from '@/components/organisms/UploadKnowledgeModal';
 import { knowledgeService } from '@/server/di';
 
 describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
@@ -319,6 +320,55 @@ describe('KnowledgePage & KnowledgeBaseWorkbench', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Pedoman Normalisasi Data 2026/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('should abort publishing and cancel timer when modal is closed manually before completion', () => {
+    vi.useFakeTimers();
+    try {
+      const onSuccess = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <UploadKnowledgeModal isOpen={true} onClose={onClose} onSuccess={onSuccess} />
+      );
+
+      const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+      fireEvent.click(publishBtn);
+
+      // User closes dialog before 600ms timer completes
+      const closeButtons = screen.getAllByRole('button', { name: /Tutup Dialog/i });
+      fireEvent.click(closeButtons[0]);
+
+      expect(onClose).toHaveBeenCalled();
+
+      // Advance past the 600ms timer duration
+      vi.advanceTimersByTime(1000);
+
+      // Callback must not fire since timer was aborted
+      expect(onSuccess).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('should fallback to default document info when fileInfo is omitted in upload success', async () => {
+    const docs = await knowledgeService.getDocuments();
+    const metrics = await knowledgeService.getMetrics();
+
+    render(
+      <KnowledgeBaseWorkbench initialDocuments={docs} initialMetrics={metrics} />
+    );
+
+    const uploadBtn = screen.getByRole('button', { name: /Upload Dokumen Polis/i });
+    fireEvent.click(uploadBtn);
+
+    // Click publish directly with default file
+    const publishBtn = screen.getByRole('button', { name: /Publikasikan ke Knowledge AI Assistant/i });
+    fireEvent.click(publishBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Polis_Baku_Secure_Life_Plus_v2\.pdf/i)).toBeDefined();
     });
   });
 });
