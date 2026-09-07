@@ -25,10 +25,14 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     const coreApiUrl =
-      process.env.CORE_API_INTERNAL_URL ||
-      process.env.CORE_API_URL ||
-      process.env.NEXT_PUBLIC_CORE_API_URL ||
-      "http://localhost:8080";
+      process.env.CORE_API_INTERNAL_URL?.trim() ||
+      process.env.CORE_API_URL?.trim() ||
+      process.env.NEXT_PUBLIC_CORE_API_URL?.trim();
+
+    if (!coreApiUrl) {
+      return [];
+    }
+
     return [
       {
         source: "/api/v1/:path*",
