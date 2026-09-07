@@ -249,6 +249,41 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     });
   });
 
+  it('shows warning toast and prevents export when filtered audit logs are empty', async () => {
+    const createObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const searchInput = screen.getByLabelText('Cari Log Audit');
+    fireEvent.change(searchInput, { target: { value: 'NON_EXISTENT_LOG_QUERY_XYZ' } });
+
+    const exportBtn = screen.getByRole('button', { name: 'Ekspor Audit Trail' });
+    fireEvent.click(exportBtn);
+
+    expect(createObjectURLMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Tidak ada data jejak audit yang cocok untuk diekspor.')).toBeDefined();
+  });
+
+  it('supports keyboard navigation (Enter key) on table rows to open inspector modal and renders correct status color', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    // Filter to FAILED status
+    const statusSelect = screen.getByLabelText('Filter Status');
+    fireEvent.change(statusSelect, { target: { value: 'FAILED' } });
+
+    // Find table rows
+    const rows = screen.getAllByRole('row');
+    // First row is header, second row is the first data row
+    fireEvent.keyDown(rows[1], { key: 'Enter' });
+
+    expect(screen.getByText('Inspeksi Audit Trail Log')).toBeDefined();
+    const statusText = screen.getByText('FAILED');
+    expect(statusText.className).toContain('text-rose-600');
+  });
+
   it('pings an individual API route and shows route responsive toast', async () => {
     const overview = await healthAuditService.getSystemOverview();
     render(<SystemHealthWorkbench initialOverview={overview} />);

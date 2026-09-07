@@ -108,6 +108,20 @@ const getAuditHash = (id: string): string => {
   return `${full.slice(0, 8)}...${full.slice(-4)}`;
 };
 
+// Status text color based on audit severity
+const getStatusColorClass = (status: AuditSeverity): string => {
+  switch (status) {
+    case 'SUCCESS':
+      return 'text-emerald-600';
+    case 'WARNING':
+      return 'text-amber-600';
+    case 'FAILED':
+      return 'text-rose-600';
+    default:
+      return 'text-slate-700';
+  }
+};
+
 export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   initialOverview,
 }) => {
@@ -196,12 +210,12 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
       const updatedService = await healthAuditService.pingSingleService(serviceId);
 
       if (updatedService) {
-        setServices((prev) => {
-          const nextServices = prev.map((s) => (s.id === serviceId ? updatedService : s));
+        setServices((prev) => prev.map((s) => (s.id === serviceId ? updatedService : s)));
+        setOverview((prev) => {
+          const nextServices = prev.services.map((s) => (s.id === serviceId ? updatedService : s));
           const total = nextServices.reduce((acc, curr) => acc + curr.latencyMs, 0);
           const avg = nextServices.length > 0 ? Number((total / nextServices.length).toFixed(1)) : 0;
-          setOverview((o) => ({ ...o, services: nextServices, avgLatencyMs: avg }));
-          return nextServices;
+          return { ...prev, services: nextServices, avgLatencyMs: avg };
         });
         showToast(`Layanan ${updatedService.name} berhasil diperiksa (${updatedService.latencyMs} ms).`);
       }
@@ -268,8 +282,13 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     });
   }, [auditLogs, categoryFilter, statusFilter, searchQuery]);
 
-  // Export Audit Trail to Downloadable JSON
+  // Export Audit Trail to Downloadable JSON with Empty Guard
   const handleExportAuditTrail = useCallback(() => {
+    if (filteredAuditLogs.length === 0) {
+      showToast('Tidak ada data jejak audit yang cocok untuk diekspor.');
+      return;
+    }
+
     try {
       const now = new Date();
       const exportData = {
@@ -645,6 +664,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari berdasarkan nama staf, target record, action, atau IP..."
+              aria-label="Cari Log Audit"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -709,8 +729,15 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                   return (
                     <tr
                       key={log.id}
+                      tabIndex={0}
                       onClick={() => setSelectedLog(log)}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedLog(log);
+                        }
+                      }}
+                      className="hover:bg-slate-50/80 transition-colors cursor-pointer focus:outline-none focus:bg-slate-100/80"
                     >
                       <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap">
                         {new Date(log.timestamp).toLocaleString('id-ID', {
@@ -741,7 +768,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                       </td>
 
                       <td className="py-3 px-4 max-w-xs truncate text-slate-600">
-                        {log.details?.reason
+                        {log.details?.diff
+                          ? String(log.details.diff)
+                          : log.details?.reason
                           ? String(log.details.reason)
                           : log.details?.updatedField
                           ? String(log.details.updatedField)
@@ -835,7 +864,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Status Eksekusi:</span>
-                <p className="font-bold text-emerald-600">{selectedLog.status}</p>
+                <p className={`font-bold ${getStatusColorClass(selectedLog.status)}`}>{selectedLog.status}</p>
               </div>
             </div>
 
