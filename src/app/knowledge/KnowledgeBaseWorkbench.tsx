@@ -128,12 +128,13 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-    const timestampSuffix = Date.now().toString().slice(-6);
+    const randomSalt = Math.random().toString(36).substring(2, 6);
+    const uniqueSuffix = `${Date.now()}-${randomSalt}`;
 
     try {
       const newDocPayload: CreateKnowledgeDocDTO = {
         title: `${cleanTitle} (Standar OJK)`,
-        slug: `${fileSlug || 'dokumen-polis'}-${timestampSuffix}`,
+        slug: `${fileSlug || 'dokumen-polis'}-${uniqueSuffix}`,
         category: 'product',
         summary: `Klausul baku polis ${cleanTitle} mencakup ketentuan pertanggungan, SLA klaim garansi pencairan, dan parameter batas non-MCU.`,
         content: `Bab IV Dokumen ${cleanTitle}:
