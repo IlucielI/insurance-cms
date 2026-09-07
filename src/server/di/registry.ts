@@ -2,6 +2,7 @@ import { SystemRepository } from '../repositories/system.repository';
 import { HealthService } from '../services/health.service';
 import { HealthController } from '../controllers/health.controller';
 import { DashboardMockRepository } from '../repositories/dashboard.mock.repository';
+import { CoreApiDashboardRepository } from '../repositories/dashboard.core-api.repository';
 import { DashboardService } from '../services/dashboard.service';
 import { ApplicationMockRepository } from '../repositories/application.mock.repository';
 import { CoreApiApplicationRepository } from '../repositories/application.core-api.repository';
@@ -17,13 +18,15 @@ const systemRepository = new SystemRepository();
 const healthService = new HealthService(systemRepository);
 export const healthController = new HealthController(healthService);
 
-const dashboardRepository = new DashboardMockRepository();
-export const dashboardService = new DashboardService(dashboardRepository);
-
 const useMock =
   process.env.MOCK_CORE_API === 'true' ||
   process.env.NEXT_PUBLIC_MOCK_CORE_API === 'true' ||
   process.env.USE_MOCK_DATA === 'true';
+
+export const dashboardRepository = useMock
+  ? new DashboardMockRepository()
+  : new CoreApiDashboardRepository();
+export const dashboardService = new DashboardService(dashboardRepository);
 
 export const applicationRepository = useMock
   ? new ApplicationMockRepository()
