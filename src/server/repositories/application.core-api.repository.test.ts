@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CoreApiApplicationRepository } from './application.core-api.repository';
-import { ApplicationMockRepository } from './application.mock.repository';
 
 describe('CoreApiApplicationRepository', () => {
-  const mockFallback = new ApplicationMockRepository();
   let repo: CoreApiApplicationRepository;
 
   beforeEach(() => {
-    repo = new CoreApiApplicationRepository(mockFallback, 'http://localhost:8080');
+    repo = new CoreApiApplicationRepository('http://localhost:8080');
     vi.restoreAllMocks();
   });
 
@@ -15,18 +13,41 @@ describe('CoreApiApplicationRepository', () => {
     vi.restoreAllMocks();
   });
 
-  it('should fall back to mock repository when Core API fetch fails or is unreachable', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('Network error: Connection refused'))
+  it('should throw error when baseUrl is not configured', async () => {
+    const unconfiguredRepo = new CoreApiApplicationRepository('');
+    await expect(unconfiguredRepo.findAll()).rejects.toThrow('Core API URL is not configured');
+    await expect(unconfiguredRepo.findById('app_1')).rejects.toThrow('Core API URL is not configured');
+    await expect(unconfiguredRepo.updateReviewCheck('app_1', 'documents_complete', 'PASSED')).rejects.toThrow(
+      'Core API URL is not configured'
     );
-
-    const dossiers = await repo.findAll();
-    expect(dossiers.length).toBeGreaterThan(0);
-    expect(dossiers[0].id).toContain('APP');
+    await expect(unconfiguredRepo.updateStatus('app_1', 'approved')).rejects.toThrow(
+      'Core API URL is not configured'
+    );
   });
 
-  it('should map Core API application response to UnderwritingDossier correctly', async () => {
+  it('should throw error when Core API fetch fails with network error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('Network error: connection refused'))
+    );
+
+    await expect(repo.findAll()).rejects.toThrow('Network error: connection refused');
+  });
+
+  it('should throw error when Core API returns HTTP error status', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      })
+    );
+
+    await expect(repo.findAll()).rejects.toThrow('Core API error fetching applications: HTTP 500');
+  });
+
+  it('should map Core API applications to UnderwritingDossier correctly on success', async () => {
     const fakeCoreApiResponse = {
       data: [
         {
@@ -93,7 +114,7 @@ describe('CoreApiApplicationRepository', () => {
       })
     );
 
-    const dossiers = await repo.findAll();
+    const dossiers = await repo.findAll({ search: 'Budi', product: 'secure-life-plus' });
     expect(dossiers.length).toBe(1);
 
     const d = dossiers[0];
@@ -101,12 +122,11 @@ describe('CoreApiApplicationRepository', () => {
     expect(d.applicantName).toBe('Budi Santoso');
     expect(d.applicantAge).toBe(34);
     expect(d.productName).toBe('Secure Life Plus');
-    expect(d.productSlug).toBe('secure-life-plus');
     expect(d.sumAssured).toContain('500.000.000');
     expect(d.monthlyPremium).toContain('450.000');
     expect(d.status).toBe('under_review');
     expect(d.statusLabel).toBe('Under Review');
-    expect(d.passedChecksCount).toBe(3); // 2 passed + 1 not_needed
+    expect(d.passedChecksCount).toBe(3);
     expect(d.totalChecksCount).toBe(4);
     expect(d.reviewChecks[0].status).toBe('PASSED');
     expect(d.reviewChecks[1].status).toBe('PASSED');
@@ -114,50 +134,41 @@ describe('CoreApiApplicationRepository', () => {
     expect(d.reviewChecks[3].status).toBe('NOT_NEEDED');
   });
 
-  it('should find application by id from Core API', async () => {
-    const fakeApp = {
-      id: 'app_demo_02',
-      product_id: 'prod_health',
-      product: { name: 'Health Guard Essential', slug: 'health-guard-essential' },
-      full_name: 'Siti Rahmawati',
-      age: 29,
-      sum_assured: 250000000,
-      payment_term: 10,
-      premium: 220000,
-      status: 'submitted',
-    };
-
+  it('should find application by id and return null on 404', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: fakeApp }),
+        ok: false,
+        status: 404,
       })
     );
 
-    const dossier = await repo.findById('app_demo_02');
-    expect(dossier).not.toBeNull();
-    expect(dossier?.applicantName).toBe('Siti Rahmawati');
-    expect(dossier?.status).toBe('submitted');
+    const dossier = await repo.findById('non_existent');
+    expect(dossier).toBeNull();
   });
 
-  it('should update review check via Core API and fall back on error', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          id: 'app_demo_01',
-          full_name: 'Budi Santoso',
-          status: 'under_review',
-          review_checks: [
-            {
-              check_type: 'documents_complete',
-              status: 'passed',
-              notes: 'Semua berkas sah',
-            },
-          ],
-        },
-      }),
+  it('should update review check via Core API PATCH request', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+      if (opts?.method === 'PATCH') {
+        return { ok: true, status: 204 };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          data: {
+            id: 'app_demo_01',
+            full_name: 'Budi Santoso',
+            status: 'under_review',
+            review_checks: [
+              {
+                check_type: 'documents_complete',
+                status: 'passed',
+                notes: 'Semua berkas sah',
+              },
+            ],
+          },
+        }),
+      };
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -171,48 +182,30 @@ describe('CoreApiApplicationRepository', () => {
     expect(updated.applicantName).toBe('Budi Santoso');
   });
 
-  it('should update status via Core API and fall back on error', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: {
-          id: 'app_demo_01',
-          full_name: 'Budi Santoso',
-          status: 'approved',
-        },
-      }),
+  it('should update status via Core API and save internal notes', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+      if (opts?.method === 'PATCH') {
+        return { ok: true, status: 204 };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          data: {
+            id: 'app_demo_01',
+            full_name: 'Budi Santoso',
+            status: 'approved',
+          },
+        }),
+      };
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const updated = await repo.updateStatus('app_demo_01', 'approved');
+    const updated = await repo.updateStatus('app_demo_01', 'approved', 'Disetujui', 'Catatan underwriting');
     expect(fetchMock).toHaveBeenCalled();
     expect(updated.status).toBe('approved');
-  });
+    expect(updated.internalAuditNotes).toBe('Catatan underwriting');
 
-  it('should delegate saveInternalNotes to fallback repository', async () => {
-    const updated = await repo.saveInternalNotes('#APP-2026-8819', 'Catatan penting');
-    expect(updated.internalAuditNotes).toBe('Catatan penting');
-  });
-
-  it('should immediately use fallback without calling fetch when baseUrl is empty', async () => {
-    const emptyRepo = new CoreApiApplicationRepository(mockFallback, '');
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-
-    const dossiers = await emptyRepo.findAll();
-    expect(dossiers.length).toBeGreaterThan(0);
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    const dossier = await emptyRepo.findById('#APP-2026-8819');
-    expect(dossier?.applicantName).toBe('Budi Santoso');
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    const updatedCheck = await emptyRepo.updateReviewCheck('#APP-2026-8819', 'documents_complete', 'PASSED');
-    expect(updatedCheck).toBeDefined();
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    const updatedStatus = await emptyRepo.updateStatus('#APP-2026-8819', 'approved');
-    expect(updatedStatus).toBeDefined();
-    expect(fetchMock).not.toHaveBeenCalled();
+    const saved = await repo.saveInternalNotes('app_demo_01', 'Catatan baru');
+    expect(saved.internalAuditNotes).toBe('Catatan baru');
   });
 });

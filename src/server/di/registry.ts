@@ -20,8 +20,14 @@ export const healthController = new HealthController(healthService);
 const dashboardRepository = new DashboardMockRepository();
 export const dashboardService = new DashboardService(dashboardRepository);
 
-const applicationMockRepository = new ApplicationMockRepository();
-export const applicationRepository = new CoreApiApplicationRepository(applicationMockRepository);
+const useMock =
+  process.env.MOCK_CORE_API === 'true' ||
+  process.env.NEXT_PUBLIC_MOCK_CORE_API === 'true' ||
+  process.env.USE_MOCK_DATA === 'true';
+
+export const applicationRepository = useMock
+  ? new ApplicationMockRepository()
+  : new CoreApiApplicationRepository();
 export const applicationService = new ApplicationService(applicationRepository);
 
 const productRepository = new ProductMockRepository();

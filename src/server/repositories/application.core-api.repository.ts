@@ -7,7 +7,6 @@ import {
   ApplicationStatus,
   ApplicationReviewCheck,
 } from './application.repository.interface';
-import { ApplicationMockRepository } from './application.mock.repository';
 
 interface CoreApiProduct {
   id: string;
@@ -51,15 +50,11 @@ interface CoreApiApplication {
 }
 
 export class CoreApiApplicationRepository implements IApplicationRepository {
-  private readonly fallbackRepo: IApplicationRepository;
   private readonly baseUrl: string;
+  private readonly internalNotesStore = new Map<string, string>();
 
-  constructor(
-    fallbackRepo: IApplicationRepository = new ApplicationMockRepository(),
-    baseUrl?: string
-  ) {
-    this.fallbackRepo = fallbackRepo;
-    this.baseUrl = baseUrl || this.resolveBaseUrl();
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl !== undefined ? baseUrl : this.resolveBaseUrl();
   }
 
   private resolveBaseUrl(): string {
@@ -137,7 +132,6 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
       this.mapReviewCheck(c)
     );
 
-    // If review checks were not populated by backend, supply default 4 pillars
     if (checks.length === 0) {
       const defaultTypes: PillarType[] = [
         'identity_verified',
@@ -146,12 +140,14 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
         'medical_required',
       ];
       defaultTypes.forEach((t) => {
-        checks.push(this.mapReviewCheck({
-          id: `${app.id}-${t}`,
-          application_id: app.id,
-          check_type: t,
-          status: 'pending',
-        }));
+        checks.push(
+          this.mapReviewCheck({
+            id: `${app.id}-${t}`,
+            application_id: app.id,
+            check_type: t,
+            status: 'pending',
+          })
+        );
       });
     }
 
@@ -173,12 +169,14 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
       statusLabel = 'Ditolak';
     }
 
-    // Generate deterministic synthetic NIK based on application ID & age
     const idHash = app.id.replace(/[^0-9]/g, '').padEnd(8, '0').slice(0, 8);
     const syntheticNik = `327104${String(app.age).padStart(2, '0')}${idHash}`;
+    const dossierId = app.id.startsWith('#') ? app.id : `#${app.id.toUpperCase()}`;
+
+    const savedNote = this.internalNotesStore.get(dossierId) || this.internalNotesStore.get(app.id);
 
     return {
-      id: app.id.startsWith('#') ? app.id : `#${app.id.toUpperCase()}`,
+      id: dossierId,
       applicantName: app.full_name,
       applicantAge: app.age,
       nik: syntheticNik,
@@ -203,6 +201,7 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
       passedChecksCount,
       totalChecksCount: checks.length,
       internalAuditNotes:
+        savedNote ||
         app.rejection_reason ||
         (app.reviewed_by
           ? `Telah diverifikasi oleh ${app.reviewed_by}`
@@ -216,79 +215,74 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
 
   async findAll(params?: ApplicationFilterParams): Promise<UnderwritingDossier[]> {
     if (!this.baseUrl) {
-      return this.fallbackRepo.findAll(params);
+      throw new Error(
+        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+      );
     }
-    try {
-      const url = new URL(`${this.baseUrl}/api/v1/applications`);
-      if (params?.status && params.status !== 'all') {
-        const mappedStatus = params.status === 'review_needed' ? 'under_review' : params.status;
-        url.searchParams.set('status', mappedStatus);
-      }
-      url.searchParams.set('limit', '50');
 
-      const res = await fetch(url.toString(), {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
-
-      if (!res.ok) {
-        throw new Error(`Core API error: HTTP ${res.status}`);
-      }
-
-      const json = await res.json();
-      const rawApplications: CoreApiApplication[] = json.data || [];
-
-      if (rawApplications.length === 0) {
-        // If Core API has no records, use fallback data
-        return this.fallbackRepo.findAll(params);
-      }
-
-      let dossiers = rawApplications.map((app) => this.mapApplicationToDossier(app));
-
-      // In-memory search & product filtering if provided
-      if (params?.search) {
-        const q = params.search.toLowerCase();
-        dossiers = dossiers.filter(
-          (d) =>
-            d.applicantName.toLowerCase().includes(q) ||
-            d.nik.toLowerCase().includes(q) ||
-            d.id.toLowerCase().includes(q)
-        );
-      }
-
-      if (params?.product && params.product !== 'all') {
-        dossiers = dossiers.filter((d) => d.productSlug === params.product);
-      }
-
-      return dossiers;
-    } catch {
-      // Graceful fallback to mock repository on connection failure or error
-      return this.fallbackRepo.findAll(params);
+    const url = new URL(`${this.baseUrl}/api/v1/applications`);
+    if (params?.status && params.status !== 'all') {
+      const mappedStatus = params.status === 'review_needed' ? 'under_review' : params.status;
+      url.searchParams.set('status', mappedStatus);
     }
+    url.searchParams.set('limit', '50');
+
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Core API error fetching applications: HTTP ${res.status} ${res.statusText}`);
+    }
+
+    const json = await res.json();
+    const rawApplications: CoreApiApplication[] = json.data || [];
+
+    let dossiers = rawApplications.map((app) => this.mapApplicationToDossier(app));
+
+    if (params?.search) {
+      const q = params.search.toLowerCase();
+      dossiers = dossiers.filter(
+        (d) =>
+          d.applicantName.toLowerCase().includes(q) ||
+          d.nik.toLowerCase().includes(q) ||
+          d.id.toLowerCase().includes(q)
+      );
+    }
+
+    if (params?.product && params.product !== 'all') {
+      dossiers = dossiers.filter((d) => d.productSlug === params.product);
+    }
+
+    return dossiers;
   }
 
   async findById(id: string): Promise<UnderwritingDossier | null> {
     if (!this.baseUrl) {
-      return this.fallbackRepo.findById(id);
+      throw new Error(
+        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+      );
     }
-    try {
-      const rawId = id.replace(/^#/, '').toLowerCase();
-      const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}`, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
 
-      if (!res.ok) {
-        return this.fallbackRepo.findById(id);
-      }
+    const rawId = id.replace(/^#/, '').toLowerCase();
+    const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
 
-      const json = await res.json();
-      if (!json.data) return this.fallbackRepo.findById(id);
-
-      return this.mapApplicationToDossier(json.data);
-    } catch {
-      return this.fallbackRepo.findById(id);
+    if (res.status === 404) {
+      return null;
     }
+
+    if (!res.ok) {
+      throw new Error(`Core API error fetching application ${id}: HTTP ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (!json.data) return null;
+
+    return this.mapApplicationToDossier(json.data);
   }
 
   async updateReviewCheck(
@@ -298,40 +292,42 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     notes?: string
   ): Promise<UnderwritingDossier> {
     if (!this.baseUrl) {
-      return this.fallbackRepo.updateReviewCheck(id, pillarType, status, notes);
-    }
-    try {
-      const rawId = id.replace(/^#/, '').toLowerCase();
-      let coreStatus: 'passed' | 'failed' | 'not_needed' | 'pending' = 'pending';
-      if (status === 'PASSED') coreStatus = 'passed';
-      else if (status === 'FAILED') coreStatus = 'failed';
-      else if (status === 'NOT_NEEDED' || status === 'WAIVED') coreStatus = 'not_needed';
-
-      const res = await fetch(
-        `${this.baseUrl}/api/v1/applications/${rawId}/review-checks/${pillarType}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({
-            status: coreStatus,
-            reviewed_by: 'Lead Underwriter',
-            notes: notes || `Pilar diverifikasi sebagai ${status} via CMS Workbench.`,
-          }),
-        }
+      throw new Error(
+        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
       );
-
-      if (!res.ok) {
-        return this.fallbackRepo.updateReviewCheck(id, pillarType, status, notes);
-      }
-
-      const updated = await this.findById(id);
-      return updated || this.fallbackRepo.updateReviewCheck(id, pillarType, status, notes);
-    } catch {
-      return this.fallbackRepo.updateReviewCheck(id, pillarType, status, notes);
     }
+
+    const rawId = id.replace(/^#/, '').toLowerCase();
+    let coreStatus: 'passed' | 'failed' | 'not_needed' | 'pending' = 'pending';
+    if (status === 'PASSED') coreStatus = 'passed';
+    else if (status === 'FAILED') coreStatus = 'failed';
+    else if (status === 'NOT_NEEDED' || status === 'WAIVED') coreStatus = 'not_needed';
+
+    const res = await fetch(
+      `${this.baseUrl}/api/v1/applications/${rawId}/review-checks/${pillarType}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          status: coreStatus,
+          reviewed_by: 'Lead Underwriter',
+          notes: notes || `Pilar diverifikasi sebagai ${status} via CMS Workbench.`,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Core API error updating review check for ${id}: HTTP ${res.status}`);
+    }
+
+    const updated = await this.findById(id);
+    if (!updated) {
+      throw new Error(`Application ${id} not found after review check update`);
+    }
+    return updated;
   }
 
   async updateStatus(
@@ -341,51 +337,65 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     notes?: string
   ): Promise<UnderwritingDossier> {
     if (!this.baseUrl) {
-      return this.fallbackRepo.updateStatus(id, newStatus, reason, notes);
+      throw new Error(
+        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+      );
     }
-    try {
-      const rawId = id.replace(/^#/, '').toLowerCase();
-      const mappedCoreStatus =
-        newStatus === 'rfi_requested' ? 'under_review' : newStatus;
 
-      // Ensure that if approving from submitted, we step through under_review if required
-      const current = await this.findById(id);
-      if (current && current.status === 'submitted' && mappedCoreStatus === 'approved') {
-        await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status: 'under_review',
-            reviewed_by: 'Lead Underwriter',
-          }),
-        });
-      }
+    const rawId = id.replace(/^#/, '').toLowerCase();
+    const mappedCoreStatus =
+      newStatus === 'rfi_requested' ? 'under_review' : newStatus;
 
-      const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
+    const current = await this.findById(id);
+    if (current && current.status === 'submitted' && mappedCoreStatus === 'approved') {
+      await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: mappedCoreStatus,
+          status: 'under_review',
           reviewed_by: 'Lead Underwriter',
-          rejection_reason: reason || (newStatus === 'rejected' ? 'Ditolak oleh underwriter' : ''),
         }),
       });
-
-      if (!res.ok) {
-        return this.fallbackRepo.updateStatus(id, newStatus, reason, notes);
-      }
-
-      const updated = await this.findById(id);
-      return updated || this.fallbackRepo.updateStatus(id, newStatus, reason, notes);
-    } catch {
-      return this.fallbackRepo.updateStatus(id, newStatus, reason, notes);
     }
+
+    const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        status: mappedCoreStatus,
+        reviewed_by: 'Lead Underwriter',
+        rejection_reason: reason || (newStatus === 'rejected' ? 'Ditolak oleh underwriter' : ''),
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Core API error updating application status for ${id}: HTTP ${res.status}`);
+    }
+
+    const updated = await this.findById(id);
+    if (!updated) {
+      throw new Error(`Application ${id} not found after status update`);
+    }
+
+    if (notes) {
+      return this.saveInternalNotes(id, notes);
+    }
+
+    return updated;
   }
 
   async saveInternalNotes(id: string, notes: string): Promise<UnderwritingDossier> {
-    return this.fallbackRepo.saveInternalNotes(id, notes);
+    const dossier = await this.findById(id);
+    if (!dossier) {
+      throw new Error(`Application ${id} not found to save internal notes`);
+    }
+
+    this.internalNotesStore.set(dossier.id, notes);
+    this.internalNotesStore.set(id, notes);
+    dossier.internalAuditNotes = notes;
+    return dossier;
   }
 }
