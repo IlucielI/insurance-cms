@@ -5,7 +5,7 @@ import { ProductManagementWorkbench } from './ProductManagementWorkbench';
 
 export default async function ProductsPage() {
   const [products, metrics] = await Promise.all([
-    productService.getProducts(),
+    productService.getProducts(undefined, 'all'),
     productService.getProductMetrics(),
   ]);
 

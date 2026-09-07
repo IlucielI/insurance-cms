@@ -223,12 +223,15 @@ export class ProductMockRepository implements IProductRepository {
     },
   ];
 
-  async getProducts(category?: ProductCategory, status?: ProductStatus): Promise<InsuranceProduct[]> {
+  async getProducts(
+    category?: ProductCategory | 'all',
+    status?: ProductStatus | 'all'
+  ): Promise<InsuranceProduct[]> {
     let list = this.products;
-    if (category) {
+    if (category && category !== 'all') {
       list = list.filter((p) => p.category === category);
     }
-    if (status) {
+    if (status && status !== 'all') {
       list = list.filter((p) => p.status === status);
     }
     return Promise.resolve(structuredClone(list));

@@ -8,6 +8,7 @@ import { ApplicationMockRepository } from '../repositories/application.mock.repo
 import { CoreApiApplicationRepository } from '../repositories/application.core-api.repository';
 import { ApplicationService } from '../services/application.service';
 import { ProductMockRepository } from '../repositories/product.mock.repository';
+import { CoreApiProductRepository } from '../repositories/product.core-api.repository';
 import { ProductService } from '../services/product.service';
 import { KnowledgeMockRepository } from '../repositories/knowledge.mock.repository';
 import { KnowledgeService } from '../services/knowledge.service';
@@ -33,7 +34,9 @@ export const applicationRepository = useMock
   : new CoreApiApplicationRepository();
 export const applicationService = new ApplicationService(applicationRepository);
 
-const productRepository = new ProductMockRepository();
+export const productRepository = useMock
+  ? new ProductMockRepository()
+  : new CoreApiProductRepository();
 export const productService = new ProductService(productRepository);
 
 const knowledgeRepository = new KnowledgeMockRepository();

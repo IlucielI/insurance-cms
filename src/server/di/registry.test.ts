@@ -3,7 +3,9 @@ import {
   dashboardRepository,
   dashboardService,
   healthController,
+  applicationRepository,
   applicationService,
+  productRepository,
   productService,
   knowledgeService,
   healthAuditService,
@@ -22,8 +24,10 @@ describe('DI Registry', () => {
     expect(dashboardService).toBeInstanceOf(DashboardService);
     expect(healthController).toBeDefined();
     expect(healthController).toBeInstanceOf(HealthController);
+    expect(applicationRepository).toBeDefined();
     expect(applicationService).toBeDefined();
     expect(applicationService).toBeInstanceOf(ApplicationService);
+    expect(productRepository).toBeDefined();
     expect(productService).toBeDefined();
     expect(productService).toBeInstanceOf(ProductService);
     expect(knowledgeService).toBeDefined();
