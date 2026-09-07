@@ -6,15 +6,30 @@ import {
   PillarType,
   PillarStatus,
 } from '@/server/repositories/application.repository.interface';
-import { applicationService } from '@/server/di';
+import {
+  approveApplicationAction,
+  rejectApplicationAction,
+  requestDocumentsAction,
+  overrideReviewCheckAction,
+  saveInternalNotesAction,
+} from './actions';
 import { ApproveModal } from '@/components/organisms/ApproveModal';
 import { RFIModal } from '@/components/organisms/RFIModal';
 import { RejectModal } from '@/components/organisms/RejectModal';
 import { ManualOverrideModal } from '@/components/organisms/ManualOverrideModal';
 
-interface UnderwritingWorkbenchProps {
+export interface UnderwritingWorkbenchActions {
+  approveApplication?: typeof approveApplicationAction;
+  rejectApplication?: typeof rejectApplicationAction;
+  requestDocuments?: typeof requestDocumentsAction;
+  overrideReviewCheck?: typeof overrideReviewCheckAction;
+  saveInternalNotes?: typeof saveInternalNotesAction;
+}
+
+export interface UnderwritingWorkbenchProps {
   initialQueue: UnderwritingDossier[];
   initialSelectedId?: string;
+  actions?: UnderwritingWorkbenchActions;
 }
 
 type TabKey = 'all' | 'review_needed' | 'submitted' | 'approved' | 'rejected';
@@ -29,6 +44,7 @@ const resolvePillarModalStatus = (status: string): 'PASSED' | 'FLAGGED' | 'FAILE
 export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
   initialQueue,
   initialSelectedId,
+  actions,
 }) => {
   const [queue, setQueue] = useState<UnderwritingDossier[]>(initialQueue);
   const [selectedId, setSelectedId] = useState<string>(() => {
@@ -110,19 +126,26 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     }, 4000);
   };
 
+  const doApprove = actions?.approveApplication || approveApplicationAction;
+  const doReject = actions?.rejectApplication || rejectApplicationAction;
+  const doRequestDocs = actions?.requestDocuments || requestDocumentsAction;
+  const doOverride = actions?.overrideReviewCheck || overrideReviewCheckAction;
+  const doSaveNotes = actions?.saveInternalNotes || saveInternalNotesAction;
+
   // Actions
   const handleConfirmApprove = async () => {
     if (!activeDossier) return;
     try {
-      const updated = await applicationService.approveApplication(
+      const updated = await doApprove(
         activeDossier.id,
         'Disetujui dan diterbitkan via Workbench UI.'
       );
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setIsApproveOpen(false);
       showToast(`Polis ${updated.id} berhasil disetujui & diterbitkan!`);
-    } catch {
-      showToast('Gagal menyetujui pengajuan.');
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Gagal menyetujui pengajuan.';
+      showToast(msg);
     }
   };
 
@@ -135,12 +158,13 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     if (!activeDossier) return;
     try {
       const reason = `Dokumen diminta: ${data.requestedDocs.join(', ')} (Batas: ${data.deadlineDays} hari, Pengingat: ${data.reminder}). Catatan: ${data.customNote}`;
-      const updated = await applicationService.requestDocuments(activeDossier.id, reason);
+      const updated = await doRequestDocs(activeDossier.id, reason);
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setIsRFIOpen(false);
       showToast(`Permintaan dokumen untuk ${updated.id} berhasil dikirim.`);
-    } catch {
-      showToast('Gagal mengirim permintaan dokumen.');
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Gagal mengirim permintaan dokumen.';
+      showToast(msg);
     }
   };
 
@@ -152,12 +176,13 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     if (!activeDossier) return;
     try {
       const reason = `[OJK: ${data.ojkCode}] ${data.justification} (PIN verified)`;
-      const updated = await applicationService.rejectApplication(activeDossier.id, reason);
+      const updated = await doReject(activeDossier.id, reason);
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setIsRejectOpen(false);
       showToast(`Pengajuan ${updated.id} berhasil ditolak.`);
-    } catch {
-      showToast('Gagal menolak pengajuan.');
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Gagal menolak pengajuan.';
+      showToast(msg);
     }
   };
 
@@ -180,7 +205,7 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     if (!activeDossier || !selectedPillar) return;
     try {
       const notes = `${data.category}: ${data.justification}`;
-      const updated = await applicationService.overridePillarCheck(
+      const updated = await doOverride(
         activeDossier.id,
         selectedPillar.type,
         data.newStatus,
@@ -189,19 +214,21 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setIsOverrideOpen(false);
       showToast(`Status ${selectedPillar.title} diperbarui menjadi ${data.newStatus}.`);
-    } catch {
-      showToast('Gagal mengubah status pilar verifikasi.');
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Gagal mengubah status pilar verifikasi.';
+      showToast(msg);
     }
   };
 
   const handleSaveNotes = async () => {
     if (!activeDossier) return;
     try {
-      const updated = await applicationService.saveInternalNotes(activeDossier.id, currentNote);
+      const updated = await doSaveNotes(activeDossier.id, currentNote);
       setQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       showToast(`Catatan audit internal untuk ${updated.id} berhasil disimpan.`);
-    } catch {
-      showToast('Gagal menyimpan catatan.');
+    } catch (err) {
+      const msg = err instanceof Error && err.message ? err.message : 'Gagal menyimpan catatan.';
+      showToast(msg);
     }
   };
 

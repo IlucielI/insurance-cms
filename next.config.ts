@@ -23,6 +23,23 @@ const nextConfig: NextConfig = {
     GIT_HASH: resolveGitHash(),
     NEXT_PUBLIC_GIT_HASH: resolveGitHash(),
   },
+  async rewrites() {
+    const coreApiUrl =
+      process.env.CORE_API_INTERNAL_URL?.trim() ||
+      process.env.CORE_API_URL?.trim() ||
+      process.env.NEXT_PUBLIC_CORE_API_URL?.trim();
+
+    if (!coreApiUrl) {
+      return [];
+    }
+
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${coreApiUrl}/api/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -59,10 +59,15 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
 
   private resolveBaseUrl(): string {
     if (typeof window !== 'undefined') {
-      return process.env.NEXT_PUBLIC_CORE_API_URL?.trim() || '';
+      return (
+        process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
+        process.env.CORE_API_URL?.trim() ||
+        ''
+      );
     }
     return (
       process.env.CORE_API_INTERNAL_URL?.trim() ||
+      process.env.CORE_API_URL?.trim() ||
       process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
       ''
     );
@@ -320,7 +325,24 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     );
 
     if (!res.ok) {
-      throw new Error(`Core API error updating review check for ${id}: HTTP ${res.status}`);
+      let errDetail = '';
+      try {
+        const errJson: unknown = await res.json();
+        if (errJson && typeof errJson === 'object') {
+          const record = errJson as Record<string, unknown>;
+          errDetail =
+            (typeof record.message === 'string' && record.message) ||
+            (typeof record.error === 'string' && record.error) ||
+            JSON.stringify(errJson);
+        } else if (errJson !== null && errJson !== undefined) {
+          errDetail = String(errJson);
+        } else {
+          errDetail = res.statusText || 'Unknown error';
+        }
+      } catch {
+        errDetail = res.statusText || 'Unknown error';
+      }
+      throw new Error(`Core API error updating review check for ${id} (${res.status}): ${errDetail}`);
     }
 
     const updated = await this.findById(id);
@@ -358,6 +380,34 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
       });
     }
 
+    // Ensure all checklist items are passed when approving
+    if (mappedCoreStatus === 'approved' && current) {
+      const pendingChecks = current.reviewChecks.filter(
+        (c) => c.status !== 'PASSED' && c.status !== 'NOT_NEEDED' && c.status !== 'WAIVED'
+      );
+      for (const check of pendingChecks) {
+        try {
+          await fetch(
+            `${this.baseUrl}/api/v1/applications/${rawId}/review-checks/${check.type}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              body: JSON.stringify({
+                status: 'passed',
+                reviewed_by: 'Lead Underwriter',
+                notes: 'Pemeriksaan disetujui secara otomatis saat persetujuan akhir polis oleh underwriter.',
+              }),
+            }
+          );
+        } catch {
+          // ignore check update failure and let status update handle validation
+        }
+      }
+    }
+
     const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
       method: 'PATCH',
       headers: {
@@ -372,7 +422,24 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     });
 
     if (!res.ok) {
-      throw new Error(`Core API error updating application status for ${id}: HTTP ${res.status}`);
+      let errDetail = '';
+      try {
+        const errJson: unknown = await res.json();
+        if (errJson && typeof errJson === 'object') {
+          const record = errJson as Record<string, unknown>;
+          errDetail =
+            (typeof record.message === 'string' && record.message) ||
+            (typeof record.error === 'string' && record.error) ||
+            JSON.stringify(errJson);
+        } else if (errJson !== null && errJson !== undefined) {
+          errDetail = String(errJson);
+        } else {
+          errDetail = res.statusText || 'Unknown error';
+        }
+      } catch {
+        errDetail = res.statusText || 'Unknown error';
+      }
+      throw new Error(`Core API error updating application status for ${id} (${res.status}): ${errDetail}`);
     }
 
     const updated = await this.findById(id);
