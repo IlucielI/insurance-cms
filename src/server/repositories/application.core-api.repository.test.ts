@@ -148,7 +148,7 @@ describe('CoreApiApplicationRepository', () => {
   });
 
   it('should update review check via Core API PATCH request', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: RequestInit) => {
       if (opts?.method === 'PATCH') {
         return { ok: true, status: 204 };
       }
@@ -183,7 +183,7 @@ describe('CoreApiApplicationRepository', () => {
   });
 
   it('should update status via Core API and save internal notes', async () => {
-    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: any) => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string, opts?: RequestInit) => {
       if (opts?.method === 'PATCH') {
         return { ok: true, status: 204 };
       }
