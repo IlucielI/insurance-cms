@@ -592,4 +592,153 @@ describe('ProductsPage & ProductManagementWorkbench', () => {
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('should allow editing all numbers in PricingRulesModal including brackets, gender, smoker, occupation, and frequency loadings', async () => {
+    const products = await productService.getProducts();
+    const targetProduct = products[0];
+    const onSavePricingRules = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={targetProduct}
+        onClose={vi.fn()}
+        onSavePricingRules={onSavePricingRules}
+      />
+    );
+
+    // 1. Edit Base Rate & Tenor
+    const baseRateInput = screen.getByLabelText(/Tarif Dasar per Rp 1.000 UP/i) as HTMLInputElement;
+    fireEvent.change(baseRateInput, { target: { value: '4.50' } });
+    expect(baseRateInput.value).toBe('4.50');
+
+    const tenorInput = screen.getByLabelText(/Masa Tenor Minimum Polis/i) as HTMLInputElement;
+    fireEvent.change(tenorInput, { target: { value: '15' } });
+    expect(tenorInput.value).toBe('15');
+
+    // 2. Edit Age Bracket 1 and Add Bracket
+    const minAge1 = screen.getByLabelText(/Usia Minimum Bracket 1/i) as HTMLInputElement;
+    fireEvent.change(minAge1, { target: { value: '20' } });
+    const maxAge1 = screen.getByLabelText(/Usia Maksimum Bracket 1/i) as HTMLInputElement;
+    fireEvent.change(maxAge1, { target: { value: '35' } });
+    const factor1 = screen.getByLabelText(/Koefisien Faktor Bracket 1/i) as HTMLInputElement;
+    fireEvent.change(factor1, { target: { value: '1.15' } });
+
+    const addBracketBtn = screen.getByRole('button', { name: /\+ Tambah Rentang Usia/i });
+    fireEvent.click(addBracketBtn);
+
+    // 3. Edit Gender Multipliers
+    const maleInput = screen.getByLabelText(/Faktor Jenis Kelamin Pria/i) as HTMLInputElement;
+    fireEvent.change(maleInput, { target: { value: '1.08' } });
+    const femaleInput = screen.getByLabelText(/Faktor Jenis Kelamin Wanita/i) as HTMLInputElement;
+    fireEvent.change(femaleInput, { target: { value: '1.02' } });
+
+    // 4. Edit Smoker Multipliers
+    const smokerInput = screen.getByLabelText(/Faktor Perokok Aktif/i) as HTMLInputElement;
+    fireEvent.change(smokerInput, { target: { value: '1.45' } });
+    const nonSmokerInput = screen.getByLabelText(/Faktor Bebas Rokok/i) as HTMLInputElement;
+    fireEvent.change(nonSmokerInput, { target: { value: '0.98' } });
+
+    // 5. Edit Occupation Multipliers
+    const occLowInput = screen.getByLabelText(/Faktor Risiko Pekerjaan Rendah/i) as HTMLInputElement;
+    fireEvent.change(occLowInput, { target: { value: '0.90' } });
+    const occStdInput = screen.getByLabelText(/Faktor Risiko Pekerjaan Standar/i) as HTMLInputElement;
+    fireEvent.change(occStdInput, { target: { value: '1.05' } });
+    const occHighInput = screen.getByLabelText(/Faktor Risiko Pekerjaan Tinggi/i) as HTMLInputElement;
+    fireEvent.change(occHighInput, { target: { value: '1.50' } });
+
+    // 6. Edit Frequency Loadings
+    const freqAnnual = screen.getByLabelText(/Loading Cara Bayar Tahunan/i) as HTMLInputElement;
+    fireEvent.change(freqAnnual, { target: { value: '0.95' } });
+    const freqQuarterly = screen.getByLabelText(/Loading Cara Bayar Kuartalan/i) as HTMLInputElement;
+    fireEvent.change(freqQuarterly, { target: { value: '1.04' } });
+    const freqMonthly = screen.getByLabelText(/Loading Cara Bayar Bulanan/i) as HTMLInputElement;
+    fireEvent.change(freqMonthly, { target: { value: '1.08' } });
+
+    // Save
+    const saveBtn = screen.getByRole('button', { name: /Simpan Aturan Tarif/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(onSavePricingRules).toHaveBeenCalledTimes(1);
+    });
+
+    const savedProduct = onSavePricingRules.mock.calls[0][0];
+    expect(savedProduct.minPaymentTerm).toBe(15);
+    expect(savedProduct.pricingRules.baseRate).toBe(0.0045);
+    expect(savedProduct.pricingRules.genderFactors.male).toBe(1.08);
+    expect(savedProduct.pricingRules.genderFactors.female).toBe(1.02);
+    expect(savedProduct.pricingRules.smokerFactors.yes).toBe(1.45);
+    expect(savedProduct.pricingRules.smokerFactors.no).toBe(0.98);
+    expect(savedProduct.pricingRules.occupationFactors.low).toBe(0.90);
+    expect(savedProduct.pricingRules.occupationFactors.standard).toBe(1.05);
+    expect(savedProduct.pricingRules.occupationFactors.high).toBe(1.50);
+    expect(savedProduct.pricingRules.frequencyLoading.annual).toBe(0.95);
+    expect(savedProduct.pricingRules.frequencyLoading.quarterly).toBe(1.04);
+    expect(savedProduct.pricingRules.frequencyLoading.monthly).toBe(1.08);
+
+    // Brackets check: bracket 1 edited + 1 bracket appended
+    expect(savedProduct.pricingRules.ageFactors[0].minAge).toBe(20);
+    expect(savedProduct.pricingRules.ageFactors[0].maxAge).toBe(35);
+    expect(savedProduct.pricingRules.ageFactors[0].factor).toBe(1.15);
+    expect(savedProduct.pricingRules.ageFactors.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('should prevent saving and display error when invalid input or minAge >= maxAge is entered', async () => {
+    const products = await productService.getProducts();
+    const targetProduct = products[0];
+    const onSavePricingRules = vi.fn();
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={targetProduct}
+        onClose={vi.fn()}
+        onSavePricingRules={onSavePricingRules}
+      />
+    );
+
+    // 1. Enter invalid base rate (0)
+    const baseRateInput = screen.getByLabelText(/Tarif Dasar per Rp 1.000 UP/i) as HTMLInputElement;
+    fireEvent.change(baseRateInput, { target: { value: '0' } });
+
+    const saveBtn = screen.getByRole('button', { name: /Simpan Aturan Tarif/i });
+    fireEvent.click(saveBtn);
+
+    expect(screen.getByText(/Tarif dasar harus bernilai angka positif/i)).toBeDefined();
+    expect(onSavePricingRules).not.toHaveBeenCalled();
+
+    // 2. Fix base rate, but set minAge >= maxAge in bracket 1
+    fireEvent.change(baseRateInput, { target: { value: '3.50' } });
+    const minAge1 = screen.getByLabelText(/Usia Minimum Bracket 1/i) as HTMLInputElement;
+    fireEvent.change(minAge1, { target: { value: '45' } });
+    const maxAge1 = screen.getByLabelText(/Usia Maksimum Bracket 1/i) as HTMLInputElement;
+    fireEvent.change(maxAge1, { target: { value: '30' } });
+
+    fireEvent.click(saveBtn);
+
+    expect(screen.getByText(/usia minimum \(45\) harus lebih kecil dari usia maksimum \(30\)/i)).toBeDefined();
+    expect(onSavePricingRules).not.toHaveBeenCalled();
+  });
+
+  it('should allow removing an age bracket when more than one exists', async () => {
+    const products = await productService.getProducts();
+    const targetProduct = products[0];
+
+    render(
+      <PricingRulesModal
+        isOpen={true}
+        product={targetProduct}
+        onClose={vi.fn()}
+      />
+    );
+
+    const deleteBtnsBefore = screen.getAllByLabelText(/Hapus Bracket/i);
+    expect(deleteBtnsBefore.length).toBeGreaterThan(0);
+
+    fireEvent.click(deleteBtnsBefore[0]);
+
+    const deleteBtnsAfter = screen.getAllByLabelText(/Hapus Bracket/i);
+    expect(deleteBtnsAfter.length).toBe(deleteBtnsBefore.length - 1);
+  });
 });
