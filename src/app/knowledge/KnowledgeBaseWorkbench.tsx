@@ -9,7 +9,14 @@ import {
   UpdateKnowledgeDocDTO,
   SimulatedChatResponse,
 } from '@/server/repositories/knowledge.repository.interface';
-import { knowledgeService } from '@/server/di';
+import {
+  createKnowledgeDocAction,
+  updateKnowledgeDocAction,
+  deleteKnowledgeDocAction,
+  reindexKnowledgeDocAction,
+  simulateRagChatAction,
+  fetchKnowledgeMetricsAction,
+} from './actions';
 import { UploadKnowledgeModal, UploadKnowledgeFileInfo } from '@/components/organisms/UploadKnowledgeModal';
 import { Modal } from '@/components/atoms/Modal';
 import { Button } from '@/components/atoms/Button';
@@ -83,7 +90,7 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
 
   const refreshMetrics = async () => {
     try {
-      const updated = await knowledgeService.getMetrics();
+      const updated = await fetchKnowledgeMetricsAction();
       setMetrics(updated);
     } catch {
       // ignore
@@ -144,7 +151,7 @@ Klaim meninggal dunia memiliki Garansi SLA Pencairan Maksimal 3 Hari Kerja ke re
 Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas non-MCU sesuai regulasi aktuaria.`,
         tags: ['ojk', 'polis-baku', fileSlug || 'knowledge-doc', 'pgvector'],
       };
-      const created = await knowledgeService.createDocument(newDocPayload);
+      const created = await createKnowledgeDocAction(newDocPayload);
       setDocuments((prev) => [created, ...prev]);
       await refreshMetrics();
       showToast(`Dokumen "${uploadedName}" berhasil dipublikasikan ke Knowledge AI Assistant.`);
@@ -213,7 +220,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           content: formData.content.trim(),
           tags,
         };
-        const updated = await knowledgeService.updateDocument(editingDoc.id, payload);
+        const updated = await updateKnowledgeDocAction(editingDoc.id, payload);
         setDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
         showToast(`Dokumen "${updated.title}" berhasil diperbarui.`);
       } else {
@@ -226,7 +233,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           content: formData.content.trim(),
           tags,
         };
-        const created = await knowledgeService.createDocument(payload);
+        const created = await createKnowledgeDocAction(payload);
         setDocuments((prev) => [...prev, created]);
         showToast(`Dokumen baru "${created.title}" berhasil diindeks ke Knowledge Base.`);
       }
@@ -254,7 +261,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
     }
 
     try {
-      await knowledgeService.deleteDocument(id);
+      await deleteKnowledgeDocAction(id);
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       await refreshMetrics();
       showToast(`Dokumen "${title}" berhasil dihapus.`);
@@ -270,7 +277,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
   // Re-index Document
   const handleReindexDoc = async (doc: KnowledgeDocument) => {
     try {
-      const reindexed = await knowledgeService.reindexDocument(doc.id);
+      const reindexed = await reindexKnowledgeDocAction(doc.id);
       setDocuments((prev) => prev.map((d) => (d.id === reindexed.id ? reindexed : d)));
       await refreshMetrics();
       showToast(`Vector embedding untuk "${doc.title}" berhasil di-reindex.`);
@@ -292,7 +299,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
     setIsLoadingChat(true);
     try {
       const categoryParam = copilotCategory === 'all' ? undefined : copilotCategory;
-      const result = await knowledgeService.simulateRagChat(q, categoryParam);
+      const result = await simulateRagChatAction(q, categoryParam);
       setChatResult(result);
       setChatHistory((prev) => [{ query: q, response: result }, ...prev.slice(0, 4)]);
       showToast(`Inferensi RAG berhasil dalam ${result.latencyMs} ms.`);

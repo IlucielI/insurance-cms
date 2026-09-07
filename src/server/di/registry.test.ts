@@ -7,6 +7,7 @@ import {
   applicationService,
   productRepository,
   productService,
+  knowledgeRepository,
   knowledgeService,
   healthAuditService,
 } from './registry';
@@ -30,6 +31,7 @@ describe('DI Registry', () => {
     expect(productRepository).toBeDefined();
     expect(productService).toBeDefined();
     expect(productService).toBeInstanceOf(ProductService);
+    expect(knowledgeRepository).toBeDefined();
     expect(knowledgeService).toBeDefined();
     expect(knowledgeService).toBeInstanceOf(KnowledgeService);
     expect(healthAuditService).toBeDefined();

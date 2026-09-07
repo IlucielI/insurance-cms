@@ -11,6 +11,7 @@ import { ProductMockRepository } from '../repositories/product.mock.repository';
 import { CoreApiProductRepository } from '../repositories/product.core-api.repository';
 import { ProductService } from '../services/product.service';
 import { KnowledgeMockRepository } from '../repositories/knowledge.mock.repository';
+import { CoreApiKnowledgeRepository } from '../repositories/knowledge.core-api.repository';
 import { KnowledgeService } from '../services/knowledge.service';
 import { HealthMockRepository } from '../repositories/health.mock.repository';
 import { HealthAuditService } from '../services/health-audit.service';
@@ -39,7 +40,9 @@ export const productRepository = useMock
   : new CoreApiProductRepository();
 export const productService = new ProductService(productRepository);
 
-const knowledgeRepository = new KnowledgeMockRepository();
+export const knowledgeRepository = useMock
+  ? new KnowledgeMockRepository()
+  : new CoreApiKnowledgeRepository();
 export const knowledgeService = new KnowledgeService(knowledgeRepository);
 
 const healthAuditRepository = new HealthMockRepository();
