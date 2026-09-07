@@ -9,7 +9,13 @@ import {
   CreateProductDTO,
   UpdateProductDTO,
 } from '@/server/repositories/product.repository.interface';
-import { productService } from '@/server/di';
+import {
+  createProductAction,
+  updateProductAction,
+  toggleProductStatusAction,
+  archiveProductAction,
+  fetchProductMetricsAction,
+} from '@/app/products/actions';
 import {
   CreateProductModal,
   EditProductModal,
@@ -52,7 +58,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
 
   const refreshMetrics = async () => {
     try {
-      const updatedMetrics = await productService.getProductMetrics();
+      const updatedMetrics = await fetchProductMetricsAction();
       setMetrics(updatedMetrics);
     } catch {
       // ignore
@@ -126,7 +132,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
     };
 
     try {
-      const created = await productService.createProduct(createPayload);
+      const created = await createProductAction(createPayload);
       setProducts((prev) => [...prev, created]);
       await refreshMetrics();
       showToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
@@ -154,7 +160,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         pricingRules: updated.pricingRules,
       };
 
-      const res = await productService.updateProduct(updated.id, updatePayload);
+      const res = await updateProductAction(updated.id, updatePayload);
       setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
       await refreshMetrics();
       showToast(`Produk "${res.name}" berhasil diperbarui.`);
@@ -170,8 +176,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   // Handle Archive Product
   const handleArchiveProduct = async (productId: string) => {
     try {
-      const updatePayload: UpdateProductDTO = { status: 'archived' };
-      const res = await productService.updateProduct(productId, updatePayload);
+      const res = await archiveProductAction(productId);
       setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
       await refreshMetrics();
       showToast(`Produk "${res.name}" berhasil diarsipkan.`);
@@ -191,7 +196,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         pricingRules: updated.pricingRules,
         minPaymentTerm: updated.minPaymentTerm,
       };
-      const res = await productService.updateProduct(updated.id, updatePayload);
+      const res = await updateProductAction(updated.id, updatePayload);
       setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
       await refreshMetrics();
       showToast(`Aturan pricing untuk "${res.name}" berhasil diperbarui.`);
@@ -209,7 +214,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   // Toggle Status
   const handleToggleStatus = async (product: InsuranceProduct) => {
     try {
-      const updated = await productService.toggleProductStatus(product.id);
+      const updated = await toggleProductStatusAction(product.id);
       setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       await refreshMetrics();
       showToast(

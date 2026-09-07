@@ -12,7 +12,10 @@ import { IProductService } from './product.service.interface';
 export class ProductService implements IProductService {
   constructor(private readonly repository: IProductRepository) {}
 
-  async getProducts(category?: ProductCategory, status?: ProductStatus): Promise<InsuranceProduct[]> {
+  async getProducts(
+    category?: ProductCategory | 'all',
+    status?: ProductStatus | 'all'
+  ): Promise<InsuranceProduct[]> {
     return this.repository.getProducts(category, status);
   }
 

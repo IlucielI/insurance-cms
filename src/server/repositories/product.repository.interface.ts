@@ -114,7 +114,10 @@ export interface UpdateProductDTO {
 }
 
 export interface IProductRepository {
-  getProducts(category?: ProductCategory, status?: ProductStatus): Promise<InsuranceProduct[]>;
+  getProducts(
+    category?: ProductCategory | 'all',
+    status?: ProductStatus | 'all'
+  ): Promise<InsuranceProduct[]>;
   getProductById(id: string): Promise<InsuranceProduct | null>;
   getProductBySlug(slug: string): Promise<InsuranceProduct | null>;
   createProduct(dto: CreateProductDTO): Promise<InsuranceProduct>;
