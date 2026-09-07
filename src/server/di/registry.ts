@@ -16,6 +16,9 @@ import { KnowledgeService } from '../services/knowledge.service';
 import { HealthMockRepository } from '../repositories/health.mock.repository';
 import { CoreApiHealthRepository } from '../repositories/health.core-api.repository';
 import { HealthAuditService } from '../services/health-audit.service';
+import { NotificationMockRepository } from '../repositories/notification.mock.repository';
+import { CoreApiNotificationRepository } from '../repositories/notification.core-api.repository';
+import { NotificationService } from '../services/notification.service';
 
 const systemRepository = new SystemRepository();
 const healthService = new HealthService(systemRepository);
@@ -50,4 +53,9 @@ export const healthAuditRepository = useMock
   ? new HealthMockRepository()
   : new CoreApiHealthRepository();
 export const healthAuditService = new HealthAuditService(healthAuditRepository);
+
+export const notificationRepository = useMock
+  ? new NotificationMockRepository()
+  : new CoreApiNotificationRepository();
+export const notificationService = new NotificationService(notificationRepository);
 

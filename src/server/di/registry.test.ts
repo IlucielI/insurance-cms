@@ -11,6 +11,8 @@ import {
   knowledgeService,
   healthAuditRepository,
   healthAuditService,
+  notificationRepository,
+  notificationService,
 } from './registry';
 import { DashboardService } from '../services/dashboard.service';
 import { HealthController } from '../controllers/health.controller';
@@ -18,6 +20,7 @@ import { ApplicationService } from '../services/application.service';
 import { ProductService } from '../services/product.service';
 import { KnowledgeService } from '../services/knowledge.service';
 import { HealthAuditService } from '../services/health-audit.service';
+import { NotificationService } from '../services/notification.service';
 
 describe('DI Registry', () => {
   it('should export initialized services and controller instances', () => {
@@ -38,6 +41,9 @@ describe('DI Registry', () => {
     expect(healthAuditRepository).toBeDefined();
     expect(healthAuditService).toBeDefined();
     expect(healthAuditService).toBeInstanceOf(HealthAuditService);
+    expect(notificationRepository).toBeDefined();
+    expect(notificationService).toBeDefined();
+    expect(notificationService).toBeInstanceOf(NotificationService);
   });
 
   it('should allow services to successfully fetch data through injected mock repository', async () => {
@@ -60,5 +66,10 @@ describe('DI Registry', () => {
     expect(healthSummary.overallStatus).toBe('online');
     expect(healthSummary.services.length).toBeGreaterThan(0);
     expect(healthSummary.auditLogs.length).toBeGreaterThan(0);
+
+    const notifs = await notificationService.getNotifications();
+    expect(notifs.data.length).toBeGreaterThan(0);
+    const unread = await notificationService.getUnreadCount();
+    expect(unread).toBeGreaterThan(0);
   });
 });
