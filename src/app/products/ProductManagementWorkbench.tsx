@@ -189,6 +189,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
     try {
       const updatePayload: UpdateProductDTO = {
         pricingRules: updated.pricingRules,
+        minPaymentTerm: updated.minPaymentTerm,
       };
       const res = await productService.updateProduct(updated.id, updatePayload);
       setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));

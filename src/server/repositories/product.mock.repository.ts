@@ -22,6 +22,8 @@ const DEFAULT_PRICING_RULES: PricingRules = {
   occupationFactors: { low: 0.95, standard: 1.0, high: 1.4 },
   healthFactors: { low: 1.0, medium: 1.25, high: 1.75 },
   frequencyLoading: { annual: 1.0, semiAnnual: 1.02, quarterly: 1.035, monthly: 1.06 },
+  annualDiscountPct: 10,
+  nonMcuLimit: 500_000_000,
 };
 
 export class ProductMockRepository implements IProductRepository {
@@ -54,6 +56,8 @@ export class ProductMockRepository implements IProductRepository {
         occupationFactors: { low: 0.95, standard: 1.0, high: 1.4 },
         healthFactors: { low: 1.0, medium: 1.25, high: 1.75 },
         frequencyLoading: { annual: 1.0, semiAnnual: 1.02, quarterly: 1.035, monthly: 1.06 },
+        annualDiscountPct: 10,
+        nonMcuLimit: 500_000_000,
       },
       benefits: [
         'Santunan meninggal dunia 100% Uang Pertanggungan',
@@ -101,6 +105,8 @@ export class ProductMockRepository implements IProductRepository {
         occupationFactors: { low: 0.95, standard: 1.0, high: 1.25 },
         healthFactors: { low: 1.0, medium: 1.3, high: 1.9 },
         frequencyLoading: { annual: 1.0, semiAnnual: 1.02, quarterly: 1.035, monthly: 1.06 },
+        annualDiscountPct: 10,
+        nonMcuLimit: 300_000_000,
       },
       benefits: [
         'Kamar rawat inap VIP / 1 tempat tidur',
@@ -147,6 +153,8 @@ export class ProductMockRepository implements IProductRepository {
         occupationFactors: { low: 0.95, standard: 1.0, high: 1.15 },
         healthFactors: { low: 1.0, medium: 1.0, high: 1.0 },
         frequencyLoading: { annual: 1.0, semiAnnual: 1.015, quarterly: 1.025, monthly: 1.04 },
+        annualDiscountPct: 15,
+        nonMcuLimit: 750_000_000,
       },
       benefits: [
         'Klaim kerugian total & sebagian (All Risk Comprehensive)',
@@ -194,6 +202,8 @@ export class ProductMockRepository implements IProductRepository {
         occupationFactors: { low: 0.95, standard: 1.0, high: 1.3 },
         healthFactors: { low: 1.0, medium: 1.4, high: 2.1 },
         frequencyLoading: { annual: 1.0, semiAnnual: 1.02, quarterly: 1.035, monthly: 1.06 },
+        annualDiscountPct: 10,
+        nonMcuLimit: 500_000_000,
       },
       benefits: [
         'Santunan tunai seketika 100% UP pada diagnosis awal',
