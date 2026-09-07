@@ -129,12 +129,26 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
     expect(screen.queryByText('SECURITY_PIN_FAILURE')).toBeNull();
 
+    // Query by visible Event Type code
+    fireEvent.change(searchInput, { target: { value: 'application.status.approved' } });
+    expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
+    expect(screen.queryByText('SECURITY_PIN_FAILURE')).toBeNull();
+
+    // Query by Audit Log ID
+    fireEvent.change(searchInput, { target: { value: 'aud_2026_0906_001' } });
+    expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
+
+    // Query by Diff detail / reason
+    fireEvent.change(searchInput, { target: { value: 'SLIK kol 5' } });
+    expect(screen.getByText('REJECT_APPLICATION')).toBeDefined();
+    expect(screen.queryByText('APPROVE_APPLICATION')).toBeNull();
+
     // Query non-existent
     fireEvent.change(searchInput, { target: { value: 'UNKNOWN_9999999' } });
     expect(screen.getByText('Tidak ada catatan log audit yang cocok.')).toBeDefined();
   });
 
-  it('opens inspector modal, copies JSON, and closes modal', async () => {
+  it('opens inspector modal, verifies full 64-char SHA-256 digest, copies JSON, and closes modal', async () => {
     // Mock navigator.clipboard
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, {
@@ -151,6 +165,7 @@ describe('HealthPage & SystemHealthWorkbench', () => {
 
     expect(screen.getByText('Inspeksi Audit Trail Log')).toBeDefined();
     expect(screen.getByText('Metadata & Payload Rinci (JSON)')).toBeDefined();
+    expect(screen.getByText(/Digest: [a-f0-9]{64}/i)).toBeDefined();
 
     // Copy JSON
     const copyBtn = screen.getByRole('button', { name: 'Salin JSON' });

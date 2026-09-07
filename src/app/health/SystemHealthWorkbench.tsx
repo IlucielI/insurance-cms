@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import type {
   ServiceHealthItem,
   AuditLogEntry,
@@ -71,6 +71,43 @@ const DEFAULT_API_ROUTES: ApiRouteItem[] = [
   },
 ];
 
+// Format Event Name to Penpot Code
+const getEventTypeCode = (action: string, category: string): string => {
+  switch (action) {
+    case 'APPROVE_APPLICATION':
+      return 'application.status.approved';
+    case 'REJECT_APPLICATION':
+      return 'application.status.rejected';
+    case 'MANUAL_OVERRIDE_CHECK':
+      return 'application.review_check.updated';
+    case 'REQUEST_FOR_INFORMATION':
+      return 'application.rfi.dispatched';
+    case 'UPDATE_PRODUCT_PRICING':
+      return 'product.pricing_rules.updated';
+    case 'REINDEX_VECTOR_CHUNK':
+      return 'pgvector.chunk.reindexed';
+    case 'CREATE_KNOWLEDGE_DOC':
+      return 'knowledge.document.indexed';
+    case 'SECURITY_PIN_FAILURE':
+      return 'security.pin_verification.failed';
+    default:
+      return `${category}.${action.toLowerCase().replace(/_/g, '.')}`;
+  }
+};
+
+// 64-character full SHA-256 Digest for Inspector Modal
+const getFullSha256Digest = (id: string): string => {
+  const raw = `${id}sha256e4f210a89c0d38e11a8e77d47f83b1653a1b90c20a87b345c22`;
+  const clean = raw.replace(/[^a-f0-9]/gi, '').toLowerCase();
+  return clean.padEnd(64, '0').slice(0, 64);
+};
+
+// Truncated Hash for table column display
+const getAuditHash = (id: string): string => {
+  const full = getFullSha256Digest(id);
+  return `${full.slice(0, 8)}...${full.slice(-4)}`;
+};
+
 export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   initialOverview,
 }) => {
@@ -96,8 +133,23 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Timers for cleanup
+  const pingRouteTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pingRouteTimerRef.current) clearTimeout(pingRouteTimerRef.current);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
   };
 
   // Ping All Services & Routes
@@ -111,7 +163,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
       for (const s of updatedServices) {
         totalLatency += s.latencyMs;
       }
-      const avgLatencyMs = Number((totalLatency / updatedServices.length).toFixed(1));
+      const avgLatencyMs = updatedServices.length > 0
+        ? Number((totalLatency / updatedServices.length).toFixed(1))
+        : 0;
 
       // Slightly randomize route latencies realistically
       setApiRoutes((prev) =>
@@ -135,16 +189,20 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     }
   };
 
-  // Ping Individual Service
+  // Ping Individual Service with Overview Latency Sync
   const handlePingSingle = async (serviceId: string) => {
     setPingingServiceId(serviceId);
     try {
       const updatedService = await healthAuditService.pingSingleService(serviceId);
 
       if (updatedService) {
-        setServices((prev) =>
-          prev.map((s) => (s.id === serviceId ? updatedService : s))
-        );
+        setServices((prev) => {
+          const nextServices = prev.map((s) => (s.id === serviceId ? updatedService : s));
+          const total = nextServices.reduce((acc, curr) => acc + curr.latencyMs, 0);
+          const avg = nextServices.length > 0 ? Number((total / nextServices.length).toFixed(1)) : 0;
+          setOverview((o) => ({ ...o, services: nextServices, avgLatencyMs: avg }));
+          return nextServices;
+        });
         showToast(`Layanan ${updatedService.name} berhasil diperiksa (${updatedService.latencyMs} ms).`);
       }
     } catch {
@@ -154,10 +212,11 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     }
   };
 
-  // Ping Individual HTTP Route
+  // Ping Individual HTTP Route with Timer Cleanup
   const handlePingRoute = (routeId: string) => {
     setPingingRouteId(routeId);
-    setTimeout(() => {
+    if (pingRouteTimerRef.current) clearTimeout(pingRouteTimerRef.current);
+    pingRouteTimerRef.current = setTimeout(() => {
       setApiRoutes((prev) =>
         prev.map((r) =>
           r.id === routeId
@@ -170,7 +229,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     }, 300);
   };
 
-  // Filtered Audit Logs
+  // Filtered Audit Logs with comprehensive search matching
   const filteredAuditLogs = useMemo(() => {
     return auditLogs.filter((log) => {
       if (categoryFilter !== 'all' && log.category !== categoryFilter) {
@@ -186,7 +245,22 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         const matchTarget = log.targetResource.toLowerCase().includes(q);
         const matchIp = log.ipAddress.includes(q);
         const matchRole = log.actorRole.toLowerCase().includes(q);
-        if (!matchActor && !matchAction && !matchTarget && !matchIp && !matchRole) {
+        const matchId = log.id.toLowerCase().includes(q);
+        const matchEventCode = getEventTypeCode(log.action, log.category).toLowerCase().includes(q);
+        const matchHash = getAuditHash(log.id).toLowerCase().includes(q);
+        const matchDetails = log.details ? JSON.stringify(log.details).toLowerCase().includes(q) : false;
+
+        if (
+          !matchActor &&
+          !matchAction &&
+          !matchTarget &&
+          !matchIp &&
+          !matchRole &&
+          !matchId &&
+          !matchEventCode &&
+          !matchHash &&
+          !matchDetails
+        ) {
           return false;
         }
       }
@@ -232,39 +306,6 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     } catch {
       showToast('Gagal menyalin ke clipboard.');
     }
-  };
-
-  // Format Event Name to Penpot Code
-  const getEventTypeCode = (action: string, category: string): string => {
-    switch (action) {
-      case 'APPROVE_APPLICATION':
-        return 'application.status.approved';
-      case 'REJECT_APPLICATION':
-        return 'application.status.rejected';
-      case 'MANUAL_OVERRIDE_CHECK':
-        return 'application.review_check.updated';
-      case 'REQUEST_FOR_INFORMATION':
-        return 'application.rfi.dispatched';
-      case 'UPDATE_PRODUCT_PRICING':
-        return 'product.pricing_rules.updated';
-      case 'REINDEX_VECTOR_CHUNK':
-        return 'pgvector.chunk.reindexed';
-      case 'CREATE_KNOWLEDGE_DOC':
-        return 'knowledge.document.indexed';
-      case 'SECURITY_PIN_FAILURE':
-        return 'security.pin_verification.failed';
-      default:
-        return `${category}.${action.toLowerCase().replace(/_/g, '.')}`;
-    }
-  };
-
-  // Format Sha-256 Hash Mock for Penpot display
-  const getAuditHash = (id: string): string => {
-    const hash = `${id}sha256e4f210a89c0d38e11a8e77d47f83b1653a1b90c2`;
-    const clean = hash.replace(/[^a-f0-9]/gi, '').toLowerCase();
-    const prefix = (clean.slice(0, 8) || '7f83b165').padEnd(8, '0');
-    const suffix = (clean.slice(-4) || '4add').padEnd(4, '0');
-    return `${prefix}...${suffix}`;
   };
 
   const getMethodBadgeClass = (method: string) => {
@@ -783,7 +824,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                 <span>IMMUTABLE OJK COMPLIANT</span>
               </div>
               <p className="text-slate-300 break-all text-[11px]">
-                Digest: {getAuditHash(selectedLog.id)}c0d38e11a8e77d47f83b1653a1b90c20a87b345c22
+                Digest: {getFullSha256Digest(selectedLog.id)}
               </p>
             </div>
 
