@@ -129,12 +129,26 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
     expect(screen.queryByText('SECURITY_PIN_FAILURE')).toBeNull();
 
+    // Query by visible Event Type code
+    fireEvent.change(searchInput, { target: { value: 'application.status.approved' } });
+    expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
+    expect(screen.queryByText('SECURITY_PIN_FAILURE')).toBeNull();
+
+    // Query by Audit Log ID
+    fireEvent.change(searchInput, { target: { value: 'aud_2026_0906_001' } });
+    expect(screen.getByText('APPROVE_APPLICATION')).toBeDefined();
+
+    // Query by Diff detail / reason
+    fireEvent.change(searchInput, { target: { value: 'SLIK kol 5' } });
+    expect(screen.getByText('REJECT_APPLICATION')).toBeDefined();
+    expect(screen.queryByText('APPROVE_APPLICATION')).toBeNull();
+
     // Query non-existent
     fireEvent.change(searchInput, { target: { value: 'UNKNOWN_9999999' } });
     expect(screen.getByText('Tidak ada catatan log audit yang cocok.')).toBeDefined();
   });
 
-  it('opens inspector modal, copies JSON, and closes modal', async () => {
+  it('opens inspector modal, verifies full 64-char SHA-256 digest, copies JSON, and closes modal', async () => {
     // Mock navigator.clipboard
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, {
@@ -151,6 +165,7 @@ describe('HealthPage & SystemHealthWorkbench', () => {
 
     expect(screen.getByText('Inspeksi Audit Trail Log')).toBeDefined();
     expect(screen.getByText('Metadata & Payload Rinci (JSON)')).toBeDefined();
+    expect(screen.getByText(/Digest: [a-f0-9]{64}/i)).toBeDefined();
 
     // Copy JSON
     const copyBtn = screen.getByRole('button', { name: 'Salin JSON' });
@@ -190,8 +205,96 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     });
 
     // Close modal via X button
-    const closeXBtn = screen.getByRole('button', { name: 'Tutup modal' });
+    const closeXBtn = screen.getByRole('button', { name: /tutup dialog|tutup modal/i });
     fireEvent.click(closeXBtn);
     expect(screen.queryByText('Inspeksi Audit Trail Log')).toBeNull();
+  });
+
+  it('renders Penpot infrastructure metric cards with correct SLA badges', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    expect(screen.getByText('Status Go Fiber Core API')).toBeDefined();
+    expect(screen.getByText('200 OK')).toBeDefined();
+    expect(screen.getByText(/Git: 9a4f2b1/i)).toBeDefined();
+
+    expect(screen.getByText('Uptime Ketersediaan')).toBeDefined();
+    expect(screen.getByText('99.98%')).toBeDefined();
+    expect(screen.getByText(/342j 18m aktif tanpa restart/i)).toBeDefined();
+
+    expect(screen.getByText('PostgreSQL DB Connection')).toBeDefined();
+    expect(screen.getByText('12 / 50 Pool')).toBeDefined();
+
+    expect(screen.getByText('Audit Trail Underwriting')).toBeDefined();
+    expect(screen.getByText('4,892 Logs')).toBeDefined();
+    expect(screen.getByText('SHA-256 Tamper-Proof')).toBeDefined();
+  });
+
+  it('exports audit trail as a downloadable JSON file and displays success toast', async () => {
+    // Mock URL.createObjectURL and revokeObjectURL
+    const createObjectURLMock = vi.fn().mockReturnValue('blob:http://localhost/dummy');
+    const revokeObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+    window.URL.revokeObjectURL = revokeObjectURLMock;
+
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const exportBtn = screen.getByRole('button', { name: 'Ekspor Audit Trail' });
+    fireEvent.click(exportBtn);
+
+    await waitFor(() => {
+      expect(createObjectURLMock).toHaveBeenCalled();
+      expect(screen.getByText(/Log audit trail berhasil diekspor/i)).toBeDefined();
+    });
+  });
+
+  it('shows warning toast and prevents export when filtered audit logs are empty', async () => {
+    const createObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const searchInput = screen.getByLabelText('Cari Log Audit');
+    fireEvent.change(searchInput, { target: { value: 'NON_EXISTENT_LOG_QUERY_XYZ' } });
+
+    const exportBtn = screen.getByRole('button', { name: 'Ekspor Audit Trail' });
+    fireEvent.click(exportBtn);
+
+    expect(createObjectURLMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Tidak ada data jejak audit yang cocok untuk diekspor.')).toBeDefined();
+  });
+
+  it('supports keyboard navigation (Enter key) on table rows to open inspector modal and renders correct status color', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    // Filter to FAILED status
+    const statusSelect = screen.getByLabelText('Filter Status');
+    fireEvent.change(statusSelect, { target: { value: 'FAILED' } });
+
+    // Find table rows
+    const rows = screen.getAllByRole('row');
+    // First row is header, second row is the first data row
+    fireEvent.keyDown(rows[1], { key: 'Enter' });
+
+    expect(screen.getByText('Inspeksi Audit Trail Log')).toBeDefined();
+    const statusText = screen.getByText('FAILED');
+    expect(statusText.className).toContain('text-rose-600');
+  });
+
+  it('pings an individual API route and shows route responsive toast', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const routePingBtns = screen.getAllByRole('button', { name: 'Ping Rute' });
+    expect(routePingBtns.length).toBeGreaterThan(0);
+
+    fireEvent.click(routePingBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/responsif dengan status 200 OK/i)).toBeDefined();
+    });
   });
 });
