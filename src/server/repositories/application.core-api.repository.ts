@@ -64,12 +64,12 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
 
   private resolveBaseUrl(): string {
     if (typeof window !== 'undefined') {
-      return process.env.NEXT_PUBLIC_CORE_API_URL || 'http://localhost:8080';
+      return process.env.NEXT_PUBLIC_CORE_API_URL?.trim() || '';
     }
     return (
-      process.env.CORE_API_INTERNAL_URL ||
-      process.env.NEXT_PUBLIC_CORE_API_URL ||
-      'http://localhost:8080'
+      process.env.CORE_API_INTERNAL_URL?.trim() ||
+      process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
+      ''
     );
   }
 
@@ -215,6 +215,9 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   }
 
   async findAll(params?: ApplicationFilterParams): Promise<UnderwritingDossier[]> {
+    if (!this.baseUrl) {
+      return this.fallbackRepo.findAll(params);
+    }
     try {
       const url = new URL(`${this.baseUrl}/api/v1/applications`);
       if (params?.status && params.status !== 'all') {
@@ -265,6 +268,9 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   }
 
   async findById(id: string): Promise<UnderwritingDossier | null> {
+    if (!this.baseUrl) {
+      return this.fallbackRepo.findById(id);
+    }
     try {
       const rawId = id.replace(/^#/, '').toLowerCase();
       const res = await fetch(`${this.baseUrl}/api/v1/applications/${rawId}`, {
@@ -291,6 +297,9 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     status: PillarStatus,
     notes?: string
   ): Promise<UnderwritingDossier> {
+    if (!this.baseUrl) {
+      return this.fallbackRepo.updateReviewCheck(id, pillarType, status, notes);
+    }
     try {
       const rawId = id.replace(/^#/, '').toLowerCase();
       let coreStatus: 'passed' | 'failed' | 'not_needed' | 'pending' = 'pending';
@@ -331,6 +340,9 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
     reason?: string,
     notes?: string
   ): Promise<UnderwritingDossier> {
+    if (!this.baseUrl) {
+      return this.fallbackRepo.updateStatus(id, newStatus, reason, notes);
+    }
     try {
       const rawId = id.replace(/^#/, '').toLowerCase();
       const mappedCoreStatus =

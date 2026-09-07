@@ -193,4 +193,26 @@ describe('CoreApiApplicationRepository', () => {
     const updated = await repo.saveInternalNotes('#APP-2026-8819', 'Catatan penting');
     expect(updated.internalAuditNotes).toBe('Catatan penting');
   });
+
+  it('should immediately use fallback without calling fetch when baseUrl is empty', async () => {
+    const emptyRepo = new CoreApiApplicationRepository(mockFallback, '');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const dossiers = await emptyRepo.findAll();
+    expect(dossiers.length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const dossier = await emptyRepo.findById('#APP-2026-8819');
+    expect(dossier?.applicantName).toBe('Budi Santoso');
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const updatedCheck = await emptyRepo.updateReviewCheck('#APP-2026-8819', 'documents_complete', 'PASSED');
+    expect(updatedCheck).toBeDefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const updatedStatus = await emptyRepo.updateStatus('#APP-2026-8819', 'approved');
+    expect(updatedStatus).toBeDefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
