@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  dashboardRepository,
   dashboardService,
   healthController,
   applicationService,
@@ -16,6 +17,7 @@ import { HealthAuditService } from '../services/health-audit.service';
 
 describe('DI Registry', () => {
   it('should export initialized services and controller instances', () => {
+    expect(dashboardRepository).toBeDefined();
     expect(dashboardService).toBeDefined();
     expect(dashboardService).toBeInstanceOf(DashboardService);
     expect(healthController).toBeDefined();

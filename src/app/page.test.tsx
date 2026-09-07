@@ -105,4 +105,37 @@ describe('HomePage (CMS 01 Executive Dashboard)', () => {
 
     spy.mockRestore();
   });
+
+  it('renders live dynamic metrics when Core API returns updated metrics', async () => {
+    const { dashboardService } = await import('@/server/di');
+    const originalOverview = await dashboardService.getOverview();
+
+    const liveOverview = {
+      ...originalOverview,
+      kpis: {
+        ...originalOverview.kpis,
+        totalApplications: {
+          ...originalOverview.kpis.totalApplications,
+          value: '2.500',
+        },
+        activePolicies: {
+          ...originalOverview.kpis.activePolicies,
+          value: '2.100',
+          trend: 'IDR 15,40 Miliar',
+        },
+      },
+    };
+
+    const spy = vi.spyOn(dashboardService, 'getOverview').mockResolvedValueOnce(liveOverview);
+
+    const Component = await HomePage();
+    render(Component);
+
+    expect(screen.getByText('2.500')).toBeDefined();
+    expect(screen.getByText('2.100')).toBeDefined();
+    expect(screen.getByText('IDR 15,40 Miliar')).toBeDefined();
+
+    spy.mockRestore();
+  });
 });
+
