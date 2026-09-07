@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    env: {
+      MOCK_CORE_API: 'true',
+    },
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
