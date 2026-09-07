@@ -7,7 +7,7 @@ import type {
   SystemHealthOverview,
   AuditSeverity,
 } from '@/server/repositories/health.repository.interface';
-import { healthAuditService } from '@/server/di';
+import { pingServicesAction, pingSingleServiceAction } from './actions';
 import { Modal } from '@/components/atoms/Modal';
 import { Button } from '@/components/atoms/Button';
 import { Select } from '@/components/atoms/Select';
@@ -170,7 +170,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   const handlePingAll = async () => {
     setIsPinging(true);
     try {
-      const updatedServices = await healthAuditService.pingServices();
+      const updatedServices = await pingServicesAction();
       setServices(updatedServices);
 
       let totalLatency = 0;
@@ -207,7 +207,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   const handlePingSingle = async (serviceId: string) => {
     setPingingServiceId(serviceId);
     try {
-      const updatedService = await healthAuditService.pingSingleService(serviceId);
+      const updatedService = await pingSingleServiceAction(serviceId);
 
       if (updatedService) {
         setServices((prev) => prev.map((s) => (s.id === serviceId ? updatedService : s)));
