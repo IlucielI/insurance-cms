@@ -190,8 +190,61 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     });
 
     // Close modal via X button
-    const closeXBtn = screen.getByRole('button', { name: 'Tutup modal' });
+    const closeXBtn = screen.getByRole('button', { name: /tutup dialog|tutup modal/i });
     fireEvent.click(closeXBtn);
     expect(screen.queryByText('Inspeksi Audit Trail Log')).toBeNull();
+  });
+
+  it('renders Penpot infrastructure metric cards with correct SLA badges', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    expect(screen.getByText('Status Go Fiber Core API')).toBeDefined();
+    expect(screen.getByText('200 OK')).toBeDefined();
+    expect(screen.getByText(/Git: 9a4f2b1/i)).toBeDefined();
+
+    expect(screen.getByText('Uptime Ketersediaan')).toBeDefined();
+    expect(screen.getByText('99.98%')).toBeDefined();
+    expect(screen.getByText(/342j 18m aktif tanpa restart/i)).toBeDefined();
+
+    expect(screen.getByText('PostgreSQL DB Connection')).toBeDefined();
+    expect(screen.getByText('12 / 50 Pool')).toBeDefined();
+
+    expect(screen.getByText('Audit Trail Underwriting')).toBeDefined();
+    expect(screen.getByText('4,892 Logs')).toBeDefined();
+    expect(screen.getByText('SHA-256 Tamper-Proof')).toBeDefined();
+  });
+
+  it('exports audit trail as a downloadable JSON file and displays success toast', async () => {
+    // Mock URL.createObjectURL and revokeObjectURL
+    const createObjectURLMock = vi.fn().mockReturnValue('blob:http://localhost/dummy');
+    const revokeObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+    window.URL.revokeObjectURL = revokeObjectURLMock;
+
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const exportBtn = screen.getByRole('button', { name: 'Ekspor Audit Trail' });
+    fireEvent.click(exportBtn);
+
+    await waitFor(() => {
+      expect(createObjectURLMock).toHaveBeenCalled();
+      expect(screen.getByText(/Log audit trail berhasil diekspor/i)).toBeDefined();
+    });
+  });
+
+  it('pings an individual API route and shows route responsive toast', async () => {
+    const overview = await healthAuditService.getSystemOverview();
+    render(<SystemHealthWorkbench initialOverview={overview} />);
+
+    const routePingBtns = screen.getAllByRole('button', { name: 'Ping Rute' });
+    expect(routePingBtns.length).toBeGreaterThan(0);
+
+    fireEvent.click(routePingBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/responsif dengan status 200 OK/i)).toBeDefined();
+    });
   });
 });

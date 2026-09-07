@@ -7,7 +7,7 @@ export default async function HealthPage() {
   const overview = await healthAuditService.getSystemOverview();
 
   return (
-    <CMSLayout pageTitle="System Health & Audit Trail" currentPath="/health">
+    <CMSLayout pageTitle="System Health, Telemetry & Audit Trail" currentPath="/health">
       <SystemHealthWorkbench initialOverview={overview} />
     </CMSLayout>
   );
