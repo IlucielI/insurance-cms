@@ -354,6 +354,7 @@ export class CoreApiProductRepository implements IProductRepository {
       return this.mockFallback.createProduct(dto);
     }
 
+    let response: Response;
     try {
       const payload = {
         name: dto.name,
@@ -375,7 +376,7 @@ export class CoreApiProductRepository implements IProductRepository {
         pricing_rules: this.mapRulesToCoreApi(dto.pricingRules),
       };
 
-      const response = await fetch(`${this.baseUrl}/api/v1/products`, {
+      response = await fetch(`${this.baseUrl}/api/v1/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -383,21 +384,18 @@ export class CoreApiProductRepository implements IProductRepository {
         },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => ({}));
-        const errorMessage = errorJson?.error || `Failed to create product (${response.status})`;
-        throw new Error(errorMessage);
-      }
-
-      const json = (await response.json()) as CoreApiProductResponse;
-      return this.mapCoreProduct(json.data);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('already exists')) {
-        throw err;
-      }
+    } catch {
       return this.mockFallback.createProduct(dto);
     }
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => ({}));
+      const errorMessage = errorJson?.error || `Failed to create product (${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    const json = (await response.json()) as CoreApiProductResponse;
+    return this.mapCoreProduct(json.data);
   }
 
   async updateProduct(id: string, dto: UpdateProductDTO): Promise<InsuranceProduct> {
@@ -405,6 +403,7 @@ export class CoreApiProductRepository implements IProductRepository {
       return this.mockFallback.updateProduct(id, dto);
     }
 
+    let response: Response;
     try {
       const payload: Record<string, unknown> = {};
       if (dto.name !== undefined) payload.name = dto.name;
@@ -429,7 +428,7 @@ export class CoreApiProductRepository implements IProductRepository {
         }
       }
 
-      const response = await fetch(`${this.baseUrl}/api/v1/products/${encodeURIComponent(id)}`, {
+      response = await fetch(`${this.baseUrl}/api/v1/products/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -437,21 +436,18 @@ export class CoreApiProductRepository implements IProductRepository {
         },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => ({}));
-        const errorMessage = errorJson?.error || `Failed to update product (${response.status})`;
-        throw new Error(errorMessage);
-      }
-
-      const json = (await response.json()) as CoreApiProductResponse;
-      return this.mapCoreProduct(json.data);
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('already exists')) {
-        throw err;
-      }
+    } catch {
       return this.mockFallback.updateProduct(id, dto);
     }
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => ({}));
+      const errorMessage = errorJson?.error || `Failed to update product (${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    const json = (await response.json()) as CoreApiProductResponse;
+    return this.mapCoreProduct(json.data);
   }
 
   async toggleProductStatus(id: string): Promise<InsuranceProduct> {
@@ -459,8 +455,9 @@ export class CoreApiProductRepository implements IProductRepository {
       return this.mockFallback.toggleProductStatus(id);
     }
 
+    let response: Response;
     try {
-      const response = await fetch(
+      response = await fetch(
         `${this.baseUrl}/api/v1/products/${encodeURIComponent(id)}/toggle-status`,
         {
           method: 'POST',
@@ -469,16 +466,18 @@ export class CoreApiProductRepository implements IProductRepository {
           },
         }
       );
-
-      if (!response.ok) {
-        return this.mockFallback.toggleProductStatus(id);
-      }
-
-      const json = (await response.json()) as CoreApiProductResponse;
-      return this.mapCoreProduct(json.data);
     } catch {
       return this.mockFallback.toggleProductStatus(id);
     }
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => ({}));
+      const errorMessage = errorJson?.error || `Failed to toggle product status (${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    const json = (await response.json()) as CoreApiProductResponse;
+    return this.mapCoreProduct(json.data);
   }
 
   async getProductMetrics(): Promise<ProductMetrics> {
