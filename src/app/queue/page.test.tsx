@@ -52,6 +52,9 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     const initialQueue = await applicationService.getQueue();
     render(<UnderwritingWorkbench initialQueue={initialQueue} />);
 
+    // Switch to Perlu Review tab to view Hendra Wijaya
+    fireEvent.click(screen.getByText(/Perlu Review/i));
+
     // Click Hendra Wijaya card
     const hendraItem = screen.getByText('Hendra Wijaya (41)');
     fireEvent.click(hendraItem);
