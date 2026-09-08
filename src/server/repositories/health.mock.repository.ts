@@ -214,6 +214,13 @@ export class HealthMockRepository implements IHealthRepository {
         avgLatencyMs,
         services: this.services,
         auditLogs: this.auditLogs,
+        apiMetadata: {
+          version: '1.2.0',
+          gitHash: '9a4f2b1',
+          uptime: '342h18m',
+          uptimeFormatted: '342j 18m aktif tanpa restart',
+          statusCode: 200,
+        },
       })
     );
   }

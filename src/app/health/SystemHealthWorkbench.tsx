@@ -420,10 +420,10 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
-              200 OK
+              {overview.apiMetadata?.statusCode ? `${overview.apiMetadata.statusCode} OK` : '200 OK'}
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-1 font-mono">
-              v1.2.0 • Git: 9a4f2b1
+              v{overview.apiMetadata?.version || '1.2.0'} • Git: {overview.apiMetadata?.gitHash || '9a4f2b1'}
             </div>
           </div>
         </div>
@@ -438,10 +438,12 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              99.98%
+              {overview.services?.find((s) => s.id === 'service_core_api')?.uptimePercentage
+                ? `${overview.services.find((s) => s.id === 'service_core_api')!.uptimePercentage}%`
+                : '99.98%'}
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-              342j 18m aktif tanpa restart
+              {overview.apiMetadata?.uptimeFormatted || '342j 18m aktif tanpa restart'}
             </div>
           </div>
         </div>

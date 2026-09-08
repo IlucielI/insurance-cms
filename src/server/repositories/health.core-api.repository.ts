@@ -61,6 +61,9 @@ interface CoreApiHealthOverviewResponse {
     };
     recent_audit_logs?: CoreApiAuditLogItem[];
     audit_logs?: CoreApiAuditLogItem[];
+    uptime?: string;
+    version?: string;
+    git_hash?: string;
   };
 }
 
@@ -209,6 +212,14 @@ export class CoreApiHealthRepository implements IHealthRepository {
         avgLatency = services.length > 0 ? Number((totalLat / services.length).toFixed(1)) : 0;
       }
 
+      const apiMetadata = {
+        version: d.version || '0.1.0',
+        gitHash: d.git_hash || 'dev',
+        uptime: d.uptime || '0s',
+        uptimeFormatted: d.uptime ? this.formatApiUptime(d.uptime) : '1m aktif tanpa restart',
+        statusCode: 200,
+      };
+
       return {
         cmsMetadata,
         overallStatus: (d.overall_status || d.overallStatus || 'online') as ServiceHealthStatus,
@@ -217,6 +228,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
         avgLatencyMs: avgLatency,
         services: services.length > 0 ? services : (await this.mockFallback.getSystemOverview()).services,
         auditLogs: auditLogs,
+        apiMetadata,
       };
     } catch (error) {
       if ((error as { status?: number }).status !== undefined) {
@@ -224,6 +236,26 @@ export class CoreApiHealthRepository implements IHealthRepository {
       }
       return this.mockFallback.getSystemOverview();
     }
+  }
+
+  private formatApiUptime(uptimeStr?: string): string {
+    if (!uptimeStr) return '1m aktif tanpa restart';
+    let hours = 0;
+    let minutes = 0;
+    const hMatch = uptimeStr.match(/(\d+)h/);
+    if (hMatch) hours = parseInt(hMatch[1], 10);
+    const mMatch = uptimeStr.match(/(\d+)m/);
+    if (mMatch) minutes = parseInt(mMatch[1], 10);
+    const sMatch = uptimeStr.match(/(\d+(\.\d+)?)s/);
+    const seconds = sMatch ? parseFloat(sMatch[1]) : 0;
+
+    if (hours > 0) {
+      return `${hours}j ${minutes}m aktif tanpa restart`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m aktif tanpa restart`;
+    }
+    return `${Math.max(1, Math.round(seconds))}d aktif tanpa restart`;
   }
 
   async pingServices(serviceId?: string): Promise<ServiceHealthItem[]> {

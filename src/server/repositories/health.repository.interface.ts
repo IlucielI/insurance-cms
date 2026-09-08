@@ -28,6 +28,14 @@ export interface AuditLogEntry {
   details: Record<string, unknown>;
 }
 
+export interface ApiHealthMetadata {
+  version: string;
+  gitHash: string;
+  uptime: string;
+  uptimeFormatted: string;
+  statusCode: number;
+}
+
 export interface SystemHealthOverview {
   cmsMetadata: SystemMetadata;
   overallStatus: ServiceHealthStatus;
@@ -36,6 +44,7 @@ export interface SystemHealthOverview {
   avgLatencyMs: number;
   services: ServiceHealthItem[];
   auditLogs: AuditLogEntry[];
+  apiMetadata?: ApiHealthMetadata;
 }
 
 export interface IHealthRepository {
