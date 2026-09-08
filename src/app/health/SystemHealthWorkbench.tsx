@@ -145,7 +145,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
 
   // Toast feedback
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Timers for cleanup
   const pingRouteTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -158,11 +158,11 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     };
   }, []);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message: msg, type });
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => {
-      setToastMessage(null);
+      setToast(null);
     }, 4000);
   };
 
@@ -195,9 +195,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         avgLatencyMs,
       }));
 
-      showToast('Seluruh layanan berhasil diperiksa (health check ping selesai).');
+      showToast('Seluruh layanan berhasil diperiksa (health check ping selesai).', 'success');
     } catch {
-      showToast('Gagal melakukan ping ke beberapa layanan.');
+      showToast('Gagal melakukan ping ke beberapa layanan.', 'error');
     } finally {
       setIsPinging(false);
     }
@@ -217,10 +217,10 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           const avg = nextServices.length > 0 ? Number((total / nextServices.length).toFixed(1)) : 0;
           return { ...prev, services: nextServices, avgLatencyMs: avg };
         });
-        showToast(`Layanan ${updatedService.name} berhasil diperiksa (${updatedService.latencyMs} ms).`);
+        showToast(`Layanan ${updatedService.name} berhasil diperiksa (${updatedService.latencyMs} ms).`, 'success');
       }
     } catch {
-      showToast('Gagal memeriksa status layanan.');
+      showToast('Gagal memeriksa status layanan.', 'error');
     } finally {
       setPingingServiceId(null);
     }
@@ -239,7 +239,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         )
       );
       setPingingRouteId(null);
-      showToast(`Rute ${routeId} responsif dengan status 200 OK.`);
+      showToast(`Rute ${routeId} responsif dengan status 200 OK.`, 'success');
     }, 300);
   };
 
@@ -285,7 +285,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   // Export Audit Trail to Downloadable JSON with Empty Guard
   const handleExportAuditTrail = useCallback(() => {
     if (filteredAuditLogs.length === 0) {
-      showToast('Tidak ada data jejak audit yang cocok untuk diekspor.');
+      showToast('Tidak ada data jejak audit yang cocok untuk diekspor.', 'error');
       return;
     }
 
@@ -310,9 +310,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      showToast(`Log audit trail berhasil diekspor (${filteredAuditLogs.length} rekaman).`);
+      showToast(`Log audit trail berhasil diekspor (${filteredAuditLogs.length} rekaman).`, 'success');
     } catch {
-      showToast('Gagal mengekspor data jejak audit.');
+      showToast('Gagal mengekspor data jejak audit.', 'error');
     }
   }, [filteredAuditLogs]);
 
@@ -321,9 +321,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
     if (!selectedLog) return;
     try {
       await navigator.clipboard.writeText(JSON.stringify(selectedLog, null, 2));
-      showToast('Payload detail audit log berhasil disalin ke clipboard.');
+      showToast('Payload detail audit log berhasil disalin ke clipboard.', 'success');
     } catch {
-      showToast('Gagal menyalin ke clipboard.');
+      showToast('Gagal menyalin ke clipboard.', 'error');
     }
   };
 
@@ -343,16 +343,20 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Toast Feedback */}
-      {toastMessage && (
-        <div className="p-3.5 bg-emerald-600 text-white rounded-xl shadow-lg flex items-center justify-between text-xs font-semibold animate-in fade-in duration-300">
+      {toast && (
+        <div
+          className={`p-3.5 text-white rounded-xl shadow-lg flex items-center justify-between text-xs font-semibold animate-in fade-in duration-300 ${
+            toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-base">✓</span>
-            <span>{toastMessage}</span>
+            <span className="text-base">{toast.type === 'error' ? '✕' : '✓'}</span>
+            <span>{toast.message}</span>
           </div>
           <button
             type="button"
             aria-label="Dismiss toast"
-            onClick={() => setToastMessage(null)}
+            onClick={() => setToast(null)}
             className="text-white/80 hover:text-white cursor-pointer"
           >
             ✕
