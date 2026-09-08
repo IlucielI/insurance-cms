@@ -32,7 +32,7 @@ export interface UnderwritingWorkbenchProps {
   actions?: UnderwritingWorkbenchActions;
 }
 
-type TabKey = 'all' | 'review_needed' | 'submitted' | 'approved' | 'rejected';
+type TabKey = 'review_needed' | 'submitted' | 'approved' | 'rejected';
 
 const resolvePillarModalStatus = (status: string): 'PASSED' | 'FLAGGED' | 'FAILED' | 'WAIVED' => {
   if (status === 'UNDER_REVIEW') return 'FLAGGED';
@@ -51,9 +51,10 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     if (initialSelectedId && initialQueue.some((d) => d.id === initialSelectedId)) {
       return initialSelectedId;
     }
-    return initialQueue[0]?.id || '#APP-2026-8819';
+    const firstReviewNeeded = initialQueue.find((d) => d.status === 'under_review');
+    return firstReviewNeeded?.id || initialQueue[0]?.id || '#APP-2026-8819';
   });
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('review_needed');
   const [searchQuery, setSearchQuery] = useState('');
   const [productFilter, setProductFilter] = useState('all');
 
@@ -299,17 +300,6 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Status Filter Tabs */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab('all')}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === 'all'
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                Semua ({tabCounts.all})
-              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('review_needed')}

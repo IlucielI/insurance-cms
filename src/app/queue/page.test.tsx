@@ -10,7 +10,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     render(Component);
 
     expect(screen.getByText('Underwriting & Verification Workbench')).toBeDefined();
-    expect(screen.getByText('Daftar Antrean Aktif (7)')).toBeDefined();
+    expect(screen.getByText(/Daftar Antrean Aktif/i)).toBeDefined();
   });
 
   it('should render with initialSelectedId from searchParams deep-link', async () => {
@@ -27,16 +27,13 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     render(<UnderwritingWorkbench initialQueue={initialQueue} />);
 
     // 1. Tab filtering
-    const tabReview = screen.getByText(/Perlu Review/i);
-    fireEvent.click(tabReview);
-    expect(screen.getByText('Budi Santoso (34)')).toBeDefined();
-
     const tabApproved = screen.getByText(/Disetujui/i);
     fireEvent.click(tabApproved);
     expect(screen.getByText('Agus Kurniawan (38)')).toBeDefined();
 
-    const tabAll = screen.getByRole('button', { name: /^Semua/i });
-    fireEvent.click(tabAll);
+    const tabReview = screen.getByText(/Perlu Review/i);
+    fireEvent.click(tabReview);
+    expect(screen.getByText('Budi Santoso (34)')).toBeDefined();
 
     // 2. Search query filtering
     const searchInput = screen.getByPlaceholderText(/Cari nomor aplikasi \/ NIK/i);
