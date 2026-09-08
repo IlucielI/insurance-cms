@@ -3,6 +3,9 @@ import { CMSLayout } from '@/components/templates/CMSLayout';
 import { applicationService } from '@/server/di';
 import { UnderwritingWorkbench } from './UnderwritingWorkbench';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface QueuePageProps {
   searchParams?: Promise<{ id?: string }>;
 }

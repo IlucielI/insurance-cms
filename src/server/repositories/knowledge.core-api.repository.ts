@@ -142,6 +142,7 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
+        cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',

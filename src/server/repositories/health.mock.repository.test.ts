@@ -31,14 +31,14 @@ describe('HealthMockRepository', () => {
   });
 
   describe('getSystemOverview', () => {
-    it('returns system health overview with 5 core services and aggregate metrics', async () => {
+    it('returns system health overview with 4 core services and aggregate metrics', async () => {
       const overview = await repository.getSystemOverview();
 
       expect(overview.overallStatus).toBe('online');
-      expect(overview.activeServicesCount).toBe(5);
-      expect(overview.totalServicesCount).toBe(5);
+      expect(overview.activeServicesCount).toBe(4);
+      expect(overview.totalServicesCount).toBe(4);
       expect(overview.avgLatencyMs).toBeGreaterThan(0);
-      expect(overview.services).toHaveLength(5);
+      expect(overview.services).toHaveLength(4);
       expect(overview.auditLogs).toHaveLength(8);
       expect(overview.cmsMetadata).toBeDefined();
     });
@@ -66,7 +66,7 @@ describe('HealthMockRepository', () => {
     it('pings all services and returns updated latencies and fresh lastChecked timestamps', async () => {
       const updatedServices = await repository.pingServices();
 
-      expect(updatedServices).toHaveLength(5);
+      expect(updatedServices).toHaveLength(4);
       for (const service of updatedServices) {
         expect(service.status).toBe('online');
         expect(service.latencyMs).toBeGreaterThanOrEqual(1);

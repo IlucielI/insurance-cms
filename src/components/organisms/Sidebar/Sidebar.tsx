@@ -17,7 +17,7 @@ export interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentPath = '/', className = '' }) => {
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/', icon: '📊', active: currentPath === '/' },
-    { label: 'Underwriting Queue', href: '/queue', icon: '📋', badge: '12', active: currentPath === '/queue' },
+    { label: 'Underwriting Queue', href: '/queue', icon: '📋', active: currentPath === '/queue' },
     { label: 'Manajemen Produk', href: '/products', icon: '🛡️', active: currentPath === '/products' },
     { label: 'Knowledge Base AI', href: '/knowledge', icon: '🧠', active: currentPath === '/knowledge' },
     { label: 'System Health & Audit', href: '/health', icon: '⚡', active: currentPath === '/health' },

@@ -188,4 +188,12 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     fireEvent.click(tabRejected);
     expect(screen.getByText('Rina Setyowati (45)')).toBeDefined();
   });
+
+  it('should render clean full-width empty state when initialQueue is empty', () => {
+    render(<UnderwritingWorkbench initialQueue={[]} />);
+    expect(screen.getByText('Tidak Ada Pengajuan Underwriting')).toBeDefined();
+    expect(
+      screen.getByText(/Saat ini belum ada pengajuan polis baru atau antrean verifikasi di sistem/i)
+    ).toBeDefined();
+  });
 });

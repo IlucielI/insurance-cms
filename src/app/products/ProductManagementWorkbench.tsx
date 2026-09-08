@@ -45,6 +45,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [productToDuplicate, setProductToDuplicate] = useState<InsuranceProduct | null>(null);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<InsuranceProduct | null>(null);
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<InsuranceProduct | null>(null);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState(false);
@@ -54,6 +55,23 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+  };
+
+  const handleDuplicateProduct = (product: InsuranceProduct) => {
+    let newSlug = `${product.slug}-copy`;
+    let counter = 2;
+    const existingSlugList = products.map((p) => p.slug.toLowerCase());
+    while (existingSlugList.includes(newSlug.toLowerCase())) {
+      newSlug = `${product.slug}-copy-${counter}`;
+      counter++;
+    }
+
+    setProductToDuplicate({
+      ...product,
+      name: `${product.name} (Salinan)`,
+      slug: newSlug,
+    });
+    setIsCreateModalOpen(true);
   };
 
   const refreshMetrics = async () => {
@@ -132,11 +150,17 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
     };
 
     try {
-      const created = await createProductAction(createPayload);
+      const result = await createProductAction(createPayload);
+      if ('error' in result && result.error) {
+        showToast(result.error);
+        throw new Error(result.error);
+      }
+      const created = result as InsuranceProduct;
       setProducts((prev) => [...prev, created]);
       await refreshMetrics();
       showToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
       setIsCreateModalOpen(false);
+      setProductToDuplicate(null);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Gagal menambahkan produk baru.';
@@ -161,9 +185,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
       };
 
       const res = await updateProductAction(updated.id, updatePayload);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        throw new Error(res.error);
+      }
+      const updatedProduct = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
       await refreshMetrics();
-      showToast(`Produk "${res.name}" berhasil diperbarui.`);
+      showToast(`Produk "${updatedProduct.name}" berhasil diperbarui.`);
       setSelectedProductForEdit(null);
     } catch (err: unknown) {
       const message =
@@ -177,9 +206,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   const handleArchiveProduct = async (productId: string) => {
     try {
       const res = await archiveProductAction(productId);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        return;
+      }
+      const archived = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === archived.id ? archived : p)));
       await refreshMetrics();
-      showToast(`Produk "${res.name}" berhasil diarsipkan.`);
+      showToast(`Produk "${archived.name}" berhasil diarsipkan.`);
       setSelectedProductForEdit(null);
     } catch (err: unknown) {
       const message =
@@ -197,9 +231,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         minPaymentTerm: updated.minPaymentTerm,
       };
       const res = await updateProductAction(updated.id, updatePayload);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        throw new Error(res.error);
+      }
+      const saved = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
       await refreshMetrics();
-      showToast(`Aturan pricing untuk "${res.name}" berhasil diperbarui.`);
+      showToast(`Aturan pricing untuk "${saved.name}" berhasil diperbarui.`);
       setSelectedProductForPricing(null);
     } catch (err: unknown) {
       const message =
@@ -214,7 +253,12 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   // Toggle Status
   const handleToggleStatus = async (product: InsuranceProduct) => {
     try {
-      const updated = await toggleProductStatusAction(product.id);
+      const res = await toggleProductStatusAction(product.id);
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        return;
+      }
+      const updated = res as InsuranceProduct;
       setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       await refreshMetrics();
       showToast(
@@ -301,7 +345,10 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setProductToDuplicate(null);
+              setIsCreateModalOpen(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors cursor-pointer"
           >
             <span>+</span>
@@ -609,7 +656,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
                         </div>
                       </td>
 
-                      {/* Actions: Edit, Pricing, Uji */}
+                      {/* Actions: Edit, Duplikat, Pricing, Uji */}
                       <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -620,6 +667,16 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
                           >
                             <span>Edit</span>
                             <span>✏️</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            aria-label={`Duplikat Produk ${product.name}`}
+                            onClick={() => handleDuplicateProduct(product)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <span>Duplikat</span>
+                            <span>📋</span>
                           </button>
 
                           <button
@@ -661,171 +718,33 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         </div>
       </div>
 
-      {/* Two Lower Actuarial Matrix Cards (Penpot Board 1 lines 574-850) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Card: Matriks Faktor Risiko Usia & Gaya Hidup */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">
-                  Matriks Faktor Risiko Usia &amp; Gaya Hidup
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Koefisien aktuaria pengali premi dasar (Secure Life &amp; Health Guard).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const target = products.find((p) => p.category === 'life') || products[0];
-                  if (target) setSelectedProductForPricing(target);
-                }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
-              >
-                <span>Konfigurasi Pricing</span>
-                <span>⚙️</span>
-              </button>
-            </div>
 
-            {/* Age Multipliers Grid */}
-            <div className="mt-4 divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden text-xs">
-              <div className="p-2.5 bg-slate-50/50 flex items-center justify-between">
-                <span className="font-semibold text-slate-700">Usia &lt; 25 Tahun</span>
-                <span className="font-mono font-extrabold text-slate-900">0.90x</span>
-                <span className="text-[11px] font-medium text-emerald-600">Low Mortality Risk</span>
-              </div>
-              <div className="p-2.5 bg-white flex items-center justify-between">
-                <span className="font-semibold text-slate-700">Usia 25 - 35 Tahun (Base)</span>
-                <span className="font-mono font-extrabold text-slate-900">1.00x</span>
-                <span className="text-[11px] font-medium text-blue-600">Baseline Standard</span>
-              </div>
-              <div className="p-2.5 bg-slate-50/50 flex items-center justify-between">
-                <span className="font-semibold text-slate-700">Usia 36 - 45 Tahun</span>
-                <span className="font-mono font-extrabold text-slate-900">1.25x</span>
-                <span className="text-[11px] font-medium text-amber-600">Moderate Risk (+25%)</span>
-              </div>
-              <div className="p-2.5 bg-white flex items-center justify-between">
-                <span className="font-semibold text-slate-700">Usia 46 - 55 Tahun</span>
-                <span className="font-mono font-extrabold text-slate-900">1.60x</span>
-                <span className="text-[11px] font-medium text-orange-600">Elevated Risk (+60%)</span>
-              </div>
-              <div className="p-2.5 bg-slate-50/50 flex items-center justify-between">
-                <span className="font-semibold text-slate-700">Usia 56 - 65 Tahun</span>
-                <span className="font-mono font-extrabold text-slate-900">2.10x</span>
-                <span className="text-[11px] font-medium text-rose-600">High Risk Factor (+110%)</span>
-              </div>
-            </div>
-
-            {/* Smoker Loading Callout */}
-            <div className="mt-3.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs">
-              <div className="font-bold text-amber-950 flex items-center gap-1.5">
-                <span>🚬</span>
-                <span>Koefisien Perokok (Smoker Loading)</span>
-              </div>
-              <p className="text-[11px] text-amber-900 mt-1">
-                Non-Perokok: 1.00x (Normal) • Perokok Aktif: 1.45x (+45% Premi Jiwa &amp; Sakit Kritis)
-              </p>
-            </div>
-
-            {/* Medical Exam Note */}
-            <div className="mt-2.5 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
-              Rule Medical Exam: UP &gt; Rp 1.000.000.000 mewajibkan hasil MCU Lab Rumah Sakit.
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 text-[10px] text-slate-400">
-            Diperbarui oleh Actuary Head • Terakhir diubah: 2 Sep 2026
-          </div>
-        </div>
-
-        {/* Right Card: Matriks Wilayah & Rider Tambahan (Kendaraan) */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">
-                  Matriks Wilayah &amp; Rider Tambahan (Kendaraan)
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Penyesuaian tarif premi OJK sesuai zonasi wilayah pelat nomor kendaraan.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const target = products.find((p) => p.category === 'vehicle') || products[0];
-                  if (target) setSelectedProductForPricing(target);
-                }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer"
-              >
-                <span>Konfigurasi Pricing</span>
-                <span>⚙️</span>
-              </button>
-            </div>
-
-            {/* Zones Grid */}
-            <div className="mt-4 divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden text-xs">
-              <div className="p-2.5 bg-slate-50/50 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900 text-[11px]">
-                    Wilayah 1 (Sumatera &amp; Sekitarnya)
-                  </div>
-                  <div className="text-[10px] text-slate-400">Plat BA, BK, BM, dkk.</div>
-                </div>
-                <div className="text-base font-extrabold text-slate-900 font-mono">1.75%</div>
-              </div>
-
-              <div className="p-2.5 bg-white flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900 text-[11px]">
-                    Wilayah 2 (DKI Jakarta, Jabar, Banten)
-                  </div>
-                  <div className="text-[10px] text-slate-400">Plat B, D, F, A (Kepadatan Tinggi)</div>
-                </div>
-                <div className="text-base font-extrabold text-slate-900 font-mono">1.85%</div>
-              </div>
-
-              <div className="p-2.5 bg-slate-50/50 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-slate-900 text-[11px]">
-                    Wilayah 3 (Jateng, Jatim, Bali, Lainnya)
-                  </div>
-                  <div className="text-[10px] text-slate-400">Plat H, L, DK, dkk.</div>
-                </div>
-                <div className="text-base font-extrabold text-slate-900 font-mono">1.65%</div>
-              </div>
-            </div>
-
-            {/* Optional Riders */}
-            <div className="mt-3.5 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
-              <div className="font-bold text-slate-800 text-[11px]">
-                Perluasan Manfaat Tambahan (Riders Optional):
-              </div>
-              <ul className="text-[10px] text-slate-600 space-y-0.5">
-                <li>• Tanggung Jawab Hukum Pihak Ketiga (TJH III s/d 50 Jt): +Rp 150.000 / thn</li>
-                <li>• Jaminan Bencana Alam (Banjir, Angin Topan, Gempa): +0.25% dari Harga Pasar Mobil</li>
-                <li>• Huru-hara, Kerusuhan &amp; Terorisme (SRCC): +0.15% dari Harga Pasar Mobil</li>
-              </ul>
-            </div>
-
-            {/* Deductible Note */}
-            <div className="mt-2.5 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
-              Batas Deductible Polis (Own Risk): Rp 300.000 per kejadian klaim.
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 text-[10px] text-slate-400">
-            Sesuai Surat Edaran Otoritas Jasa Keuangan (OJK) No. 06/D.05/2017.
-          </div>
-        </div>
-      </div>
 
       {/* 4 ACTION MODALS */}
       {/* 1. Modal Tambah Produk (Board 2) */}
       <CreateProductModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        existingSlugs={products.map((p) => p.slug)}
+        initialData={
+          productToDuplicate
+            ? {
+                name: productToDuplicate.name,
+                slug: productToDuplicate.slug,
+                category: productToDuplicate.category,
+                status: productToDuplicate.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+                basePremiumMonthly: productToDuplicate.startingPremium,
+                minSumAssured: productToDuplicate.minSumAssured,
+                maxSumAssured: productToDuplicate.maxSumAssured,
+                minAge: 18,
+                maxAge: 60,
+                summary: productToDuplicate.shortDescription,
+              }
+            : null
+        }
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setProductToDuplicate(null);
+        }}
         onSubmitCreate={handleCreateProduct}
       />
 

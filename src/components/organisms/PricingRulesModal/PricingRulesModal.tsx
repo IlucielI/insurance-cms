@@ -107,6 +107,12 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
 
   if (!product) return null;
 
+  const isVehicle =
+    product.category === 'vehicle' ||
+    (product as { categoryKey?: string })?.categoryKey === 'vehicle' ||
+    product.slug?.toLowerCase().includes('auto') ||
+    product.slug?.toLowerCase().includes('vehicle');
+
   // Bracket Handlers
   const handleUpdateBracket = (index: number, field: keyof AgeFactor, value: number) => {
     setAgeFactors((prev) => {
@@ -575,15 +581,17 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
               <span className="block text-[10px] text-slate-400">Loading +{Math.round((smokerYes - 1) * 100)}% perokok aktif</span>
             </div>
 
-            {/* Occupation Box */}
+            {/* Occupation / Vehicle Usage Box */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
-                <span>💼</span>
-                <span>Kelas Risiko Pekerjaan:</span>
+                <span>{isVehicle ? '🚗' : '💼'}</span>
+                <span>{isVehicle ? 'Faktor Penggunaan Kendaraan:' : 'Kelas Risiko Pekerjaan:'}</span>
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Rendah:</span>
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {isVehicle ? 'Pribadi / Santai:' : 'Rendah:'}
+                  </span>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -599,7 +607,9 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Standar:</span>
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {isVehicle ? 'Harian Kota:' : 'Standar:'}
+                  </span>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -615,7 +625,9 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Tinggi:</span>
+                  <span className="text-[11px] font-medium text-slate-600">
+                    {isVehicle ? 'Komersial / Logistik:' : 'Tinggi:'}
+                  </span>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -631,7 +643,9 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
                   </div>
                 </div>
               </div>
-              <span className="block text-[10px] text-slate-400">Office vs Teknisi vs Hazard</span>
+              <span className="block text-[10px] text-slate-400">
+                {isVehicle ? 'Pribadi vs Harian Kota vs Logistik' : 'Office vs Teknisi vs Hazard'}
+              </span>
             </div>
 
             {/* Frequency Loading Box */}

@@ -33,6 +33,8 @@ describe('Product Server Actions', () => {
     });
 
     expect(result).toBeDefined();
+    expect('error' in result).toBe(false);
+    if ('error' in result) throw new Error(result.error);
     expect(result.name).toBe('Produk Action Test');
     expect(result.slug).toBe(uniqueSlug);
     expect(revalidatePath).toHaveBeenCalledWith('/products');
@@ -46,6 +48,8 @@ describe('Product Server Actions', () => {
     });
 
     expect(result).toBeDefined();
+    expect('error' in result).toBe(false);
+    if ('error' in result) throw new Error(result.error);
     expect(result.name).toBe('Updated Product Name via Action');
     expect(revalidatePath).toHaveBeenCalledWith('/products');
   });
@@ -55,6 +59,7 @@ describe('Product Server Actions', () => {
     const result = await toggleProductStatusAction(targetId);
 
     expect(result).toBeDefined();
+    expect('error' in result).toBe(false);
     expect(revalidatePath).toHaveBeenCalledWith('/products');
   });
 
@@ -63,6 +68,8 @@ describe('Product Server Actions', () => {
     const result = await archiveProductAction(targetId);
 
     expect(result).toBeDefined();
+    expect('error' in result).toBe(false);
+    if ('error' in result) throw new Error(result.error);
     expect(result.status).toBe('archived');
     expect(revalidatePath).toHaveBeenCalledWith('/products');
   });

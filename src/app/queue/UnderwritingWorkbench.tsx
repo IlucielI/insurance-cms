@@ -279,185 +279,203 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
         </div>
       </div>
 
-      {/* Filter Tabs & Product Select */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'all'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Semua ({tabCounts.all})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('review_needed')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'review_needed'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Perlu Review ({tabCounts.review_needed})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('submitted')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'submitted'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Submitted Baru ({tabCounts.submitted})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('approved')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'approved'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Disetujui ({tabCounts.approved})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('rejected')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'rejected'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            Ditolak ({tabCounts.rejected})
-          </button>
+      {queue.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-16 text-center flex flex-col items-center justify-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl text-slate-400">
+            📋
+          </div>
+          <div className="max-w-md space-y-1.5">
+            <h3 className="text-base font-bold text-slate-900">
+              Tidak Ada Pengajuan Underwriting
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Saat ini belum ada pengajuan polis baru atau antrean verifikasi di sistem. Seluruh pendaftaran pengajuan baru dari nasabah akan otomatis tampil di sini secara real-time.
+            </p>
+          </div>
         </div>
-
-        {/* Right Product Filter */}
-        <div className="flex items-center gap-2">
-          <select
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Filter Produk: Semua Kategori</option>
-            <option value="secure-life-plus">Secure Life Plus</option>
-            <option value="health-guard-essential">Health Guard Essential</option>
-            <option value="auto-shield-comprehensive">Auto Shield Comprehensive</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Main Split Layout: Left Queue (360px) + Right Dossier (732px) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: Queue List (4 cols) */}
-        <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-slate-100 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-                Daftar Antrean Aktif ({filteredQueue.length})
-              </h2>
-              <span className="text-xs font-semibold text-slate-600 cursor-pointer hover:text-slate-900 transition-colors">
-                Urutkan: SLA Paling Mendesak ▼
-              </span>
+      ) : (
+        <>
+          {/* Filter Tabs & Product Select */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Status Filter Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('all')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'all'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Semua ({tabCounts.all})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('review_needed')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'review_needed'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Perlu Review ({tabCounts.review_needed})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('submitted')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'submitted'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Submitted Baru ({tabCounts.submitted})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('approved')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'approved'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Disetujui ({tabCounts.approved})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('rejected')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'rejected'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Ditolak ({tabCounts.rejected})
+              </button>
             </div>
 
-            {/* Search Input */}
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
-              <input
-                type="text"
-                placeholder="Cari nomor aplikasi / NIK..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Right Product Filter */}
+            <div className="flex items-center gap-2">
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Filter Produk: Semua Kategori</option>
+                <option value="secure-life-plus">Secure Life Plus</option>
+                <option value="health-guard-essential">Health Guard Essential</option>
+                <option value="auto-shield-comprehensive">Auto Shield Comprehensive</option>
+              </select>
             </div>
           </div>
 
-          {/* Queue List Scrollable Container */}
-          <div className="divide-y divide-slate-100 max-h-[860px] overflow-y-auto">
-            {filteredQueue.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
-                Tidak ada pengajuan yang sesuai dengan kriteria filter.
+          {/* Main Split Layout: Left Queue (360px) + Right Dossier (732px) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* LEFT COLUMN: Queue List (4 cols) */}
+            <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                    Daftar Antrean Aktif ({filteredQueue.length})
+                  </h2>
+                  <span className="text-xs font-semibold text-slate-600 cursor-pointer hover:text-slate-900 transition-colors">
+                    Urutkan: SLA Paling Mendesak ▼
+                  </span>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Cari nomor aplikasi / NIK..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
-            ) : (
-              filteredQueue.map((item) => {
-                const isSelected = item.id === activeDossier?.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    className={`w-full text-left p-4 transition-all flex flex-col gap-2 ${
-                      isSelected
-                        ? 'bg-blue-50/70 border-l-4 border-blue-600'
-                        : 'hover:bg-slate-50/80'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold ${isSelected ? 'text-blue-600' : 'text-slate-900'}`}>
-                        {item.id}
-                      </span>
-                      <span
-                        className="text-[11px] font-bold font-mono"
-                        style={{ color: item.slaColor }}
-                      >
-                        {item.slaText}
-                      </span>
-                    </div>
 
-                    <div>
-                      <div className="font-bold text-sm text-slate-900">
-                        {item.applicantName} ({item.applicantAge})
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono">
-                        NIK: {item.nik}
-                      </div>
-                    </div>
-
-                    <div className="text-xs font-medium text-slate-700">
-                      {item.productName}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-mono">
-                      UP: {item.sumAssured}
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+              {/* Queue List Scrollable Container */}
+              <div className="divide-y divide-slate-100 max-h-[860px] overflow-y-auto">
+                {filteredQueue.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-xs">
+                    Tidak ada pengajuan yang sesuai dengan kriteria filter.
+                  </div>
+                ) : (
+                  filteredQueue.map((item) => {
+                    const isSelected = item.id === activeDossier?.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSelectedId(item.id)}
+                        className={`w-full text-left p-4 transition-all flex flex-col gap-2 ${
                           isSelected
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-blue-50/70 border-l-4 border-blue-600'
+                            : 'hover:bg-slate-50/80'
                         }`}
                       >
-                        {item.statusLabel}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                        {item.passedChecksCount}/{item.totalChecksCount} Checks
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-bold ${isSelected ? 'text-blue-600' : 'text-slate-900'}`}>
+                            {item.id}
+                          </span>
+                          <span
+                            className="text-[11px] font-bold font-mono"
+                            style={{ color: item.slaColor }}
+                          >
+                            {item.slaText}
+                          </span>
+                        </div>
 
-          <div className="p-3 bg-slate-50/80 border-t border-slate-100 text-[11px] text-slate-400 text-center">
-            Halaman 1 dari 4 ({filteredQueue.length} Total) • Auto Poll 30s
-          </div>
-        </div>
+                        <div>
+                          <div className="font-bold text-sm text-slate-900">
+                            {item.applicantName} ({item.applicantAge})
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono">
+                            NIK: {item.nik}
+                          </div>
+                        </div>
 
-        {/* RIGHT COLUMN: Dossier & 4 Pillar Checks (8 cols) */}
-        {activeDossier && (
-          <div className="lg:col-span-8 space-y-6">
+                        <div className="text-xs font-medium text-slate-700">
+                          {item.productName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          UP: {item.sumAssured}
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isSelected
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {item.statusLabel}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                            {item.passedChecksCount}/{item.totalChecksCount} Checks
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="p-3 bg-slate-50/80 border-t border-slate-100 text-[11px] text-slate-400 text-center">
+                {filteredQueue.length > 0
+                  ? `Menampilkan ${filteredQueue.length} dari ${queue.length} antrean • Auto Poll 30s`
+                  : 'Tidak ada antrean yang cocok'}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Dossier & 4 Pillar Checks (8 cols) */}
+            {activeDossier && (
+              <div className="lg:col-span-8 space-y-6">
             {/* Dossier Header Card (Dark Surface) */}
             <div className="bg-[#0f172a] rounded-xl text-white p-6 shadow-md space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -702,6 +720,8 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
               onSubmit={handleSubmitOverride}
             />
           )}
+        </>
+      )}
         </>
       )}
     </div>

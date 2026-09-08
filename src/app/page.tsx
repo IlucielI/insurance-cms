@@ -5,6 +5,9 @@ import { StatCard } from '@/components/molecules/StatCard';
 import { StatusPill } from '@/components/molecules/StatusPill';
 import { dashboardService } from '@/server/di';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const data = await dashboardService.getOverview();
 
@@ -122,7 +125,7 @@ export default async function HomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                    Semua (28)
+                    Semua ({data.kpis.totalApplications.value})
                   </span>
                   <Link
                     href="/queue"
@@ -147,45 +150,53 @@ export default async function HomePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {data.recentQueue.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-blue-600 block">{row.id}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            SLA: {row.slaText}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-slate-900 block">{row.applicantName}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            NIK: {row.nik.substring(0, 8)}***
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-medium text-slate-700">
-                          {row.productName}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
-                          {row.sumAssured}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(
-                              row.status
-                            )}`}
-                          >
-                            {row.statusLabel}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <Link
-                            href={`/queue?id=${row.id}`}
-                            className="inline-flex items-center px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
-                          >
-                            Buka
-                          </Link>
+                    {data.recentQueue.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                          Belum ada antrean pengajuan yang perlu tindakan saat ini.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      data.recentQueue.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-blue-600 block">{row.id}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              SLA: {row.slaText}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 block">{row.applicantName}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              NIK: {row.nik.substring(0, 8)}***
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-medium text-slate-700">
+                            {row.productName}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
+                            {row.sumAssured}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(
+                                row.status
+                              )}`}
+                            >
+                              {row.statusLabel}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <Link
+                              href={`/queue?id=${row.id}`}
+                              className="inline-flex items-center px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
+                            >
+                              Buka
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -193,7 +204,12 @@ export default async function HomePage() {
 
             {/* Table Footer */}
             <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Menampilkan 5 dari 28 antrean • Auto-refresh via WebSocket Core API</span>
+              <span>
+                {data.recentQueue.length > 0
+                  ? `Menampilkan ${data.recentQueue.length} dari ${data.kpis.totalApplications.value} antrean`
+                  : 'Tidak ada antrean pengajuan aktif'}{' '}
+                • Terhubung ke Core API
+              </span>
             </div>
           </div>
 
@@ -258,83 +274,71 @@ export default async function HomePage() {
                 Top 3 Performa Produk (Volume Premi Tertinggi)
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Peringkat 3 produk kontributor terbesar dari total premi aktif (Rp 8.42 Miliar). Diperbarui real-time via Core API.
+                Peringkat produk kontributor terbesar dari total premi aktif ({data.kpis.activePolicies.trend}). Diperbarui real-time via Core API.
               </p>
             </div>
             <Link
               href="/products"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors self-start sm:self-auto"
             >
-              Kelola Produk di CMS 03 →
+              Kelola Produk di CMS →
             </Link>
           </div>
 
-          {/* 3 Clean Product Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {data.topProducts.map((prod) => (
-              <div
-                key={prod.slug}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
-              >
-                <div>
-                  {/* Top Bar: Category & Rank Badge */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className={`text-[11px] font-extrabold tracking-wider ${prod.categoryColor}`}>
-                      {prod.category}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${prod.rankBadgeBg} ${prod.rankBadgeColor}`}
-                    >
-                      {prod.rankBadge}
-                    </span>
-                  </div>
-
-                  {/* Product Title */}
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                    {prod.name}
-                  </h3>
-
-                  {/* Stat Box */}
-                  <div className="mt-4 p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase block">
-                        Volume Premi Terbit
+          {/* Clean Product Cards or Empty State */}
+          {data.topProducts.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center text-xs text-slate-400">
+              Belum ada data performa kontribusi polis aktif saat ini.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {data.topProducts.map((prod) => (
+                <div
+                  key={prod.slug}
+                  className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
+                >
+                  <div>
+                    {/* Top Bar: Category & Rank Badge */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className={`text-[11px] font-extrabold tracking-wider ${prod.categoryColor}`}>
+                        {prod.category}
                       </span>
-                      <span className="text-base font-extrabold text-slate-900 font-mono">
-                        {prod.volumeFormatted}
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${prod.rankBadgeBg} ${prod.rankBadgeColor}`}
+                      >
+                        {prod.rankBadge}
                       </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase block">
-                        Polis Terbit
-                      </span>
-                      <span className="text-sm font-bold text-slate-800 font-mono">
-                        {prod.activePoliciesCount} Polis Aktif
-                      </span>
+
+                    {/* Product Title */}
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                      {prod.name}
+                    </h3>
+
+                    {/* Stat Box */}
+                    <div className="mt-4 p-3.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-semibold text-slate-500 uppercase block">
+                          Volume Premi Terbit
+                        </span>
+                        <span className="text-base font-extrabold text-slate-900 font-mono">
+                          {prod.volumeFormatted}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-semibold text-slate-500 uppercase block">
+                          Polis Terbit
+                        </span>
+                        <span className="text-sm font-bold text-slate-800 font-mono">
+                          {prod.activePoliciesCount} Polis Aktif
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Loss Ratio Tag */}
-                  <div className="mt-3.5 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Loss Ratio (Rasio Klaim):</span>
-                    <span className={`font-bold ${prod.lossRatioColor}`}>
-                      {prod.lossRatioText} {prod.lossRatioStatus}
-                    </span>
-                  </div>
                 </div>
-
-                {/* Bottom CTA Action */}
-                <div className="mt-5 pt-4 border-t border-slate-100">
-                  <Link
-                    href={`/products?edit=${prod.slug}`}
-                    className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <span>Konfigurasi Pricing Rules ⚙️</span>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer Note */}
