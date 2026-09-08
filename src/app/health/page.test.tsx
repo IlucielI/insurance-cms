@@ -19,7 +19,6 @@ describe('HealthPage & SystemHealthWorkbench', () => {
     expect(screen.getByText('Core API Backend (Go Fiber)')).toBeDefined();
     expect(screen.getByText('PostgreSQL 16 & pgvector DB')).toBeDefined();
     expect(screen.getByText('Redis Distributed Cache')).toBeDefined();
-    expect(screen.getByText('Dukcapil OCR & Liveness Gateway')).toBeDefined();
     expect(screen.getByText('SMTP Relay & e-Policy Dispatcher')).toBeDefined();
     expect(screen.getByText('Latensi Jaringan Rata-Rata')).toBeDefined();
   });

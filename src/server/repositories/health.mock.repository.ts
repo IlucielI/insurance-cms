@@ -42,16 +42,7 @@ export class HealthMockRepository implements IHealthRepository {
       uptimePercentage: 100,
       lastChecked: new Date().toISOString(),
     },
-    {
-      id: 'service_dukcapil',
-      name: 'Dukcapil OCR & Liveness Gateway',
-      type: 'Government Identity Gateway',
-      endpoint: 'https://api.dukcapil.kemendagri.go.id/v2/verify',
-      status: 'online',
-      latencyMs: 42,
-      uptimePercentage: 99.85,
-      lastChecked: new Date().toISOString(),
-    },
+
     {
       id: 'service_smtp',
       name: 'SMTP Relay & e-Policy Dispatcher',
