@@ -451,12 +451,12 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              {overview.services?.find((s) => s.id === 'service_core_api')?.uptimePercentage
+              {overview.services?.find((s) => s.id === 'service_core_api')?.uptimePercentage !== undefined
                 ? `${overview.services.find((s) => s.id === 'service_core_api')!.uptimePercentage}%`
-                : '99.98%'}
+                : '100%'}
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-              {overview.apiMetadata?.uptimeFormatted || '342j 18m aktif tanpa restart'}
+              {overview.apiMetadata?.uptimeFormatted || 'Aktif tanpa restart'}
             </div>
           </div>
         </div>

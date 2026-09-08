@@ -126,7 +126,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
       endpoint: item.endpoint,
       status: (item.status as ServiceHealthStatus) || 'online',
       latencyMs: item.latency_ms ?? item.latencyMs ?? 0,
-      uptimePercentage: item.uptime_percentage ?? item.uptimePercentage ?? 99.9,
+      uptimePercentage: item.uptime_percentage ?? item.uptimePercentage ?? 100,
       lastChecked: item.last_checked || item.lastChecked || new Date().toISOString(),
     };
   }
