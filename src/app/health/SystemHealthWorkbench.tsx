@@ -364,33 +364,36 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         </div>
       )}
 
-      {/* Header (Penpot Board 1 Spec) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1
-            aria-label="System Health & Audit Trail"
-            className="text-2xl font-extrabold text-slate-900 tracking-tight"
-          >
-            System Health, Telemetry &amp; Audit Trail
-          </h1>
-          <p className="text-sm text-slate-500 mt-1 max-w-3xl">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1
+              aria-label="System Health & Audit Trail"
+              className="text-2xl font-extrabold text-slate-900 tracking-tight"
+            >
+              System Health, Telemetry &amp; Audit Trail
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Semua Service Sehat</span>
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
             Pemantauan status live Go Fiber Core API, koneksi pool PostgreSQL 16, pgvector index, dan jejak audit kepatuhan underwriter.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Semua Service Sehat</span>
-          </span>
-
+        <div className="flex items-center gap-2.5 shrink-0 self-start lg:self-center">
           <button
             type="button"
             onClick={handleExportAuditTrail}
             aria-label="Ekspor Audit Trail"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 transition-all cursor-pointer shrink-0"
           >
-            <span>📥</span>
+            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
             <span>Ekspor Audit Trail</span>
           </button>
 
@@ -400,10 +403,12 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
             disabled={isPinging}
             aria-label="Ping Seluruh Layanan"
             title="Ping Seluruh Layanan"
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
-            <span className={isPinging ? 'animate-spin inline-block' : ''}>🔄</span>
-            <span>{isPinging ? 'Memeriksa SLA...' : 'Re-Check SLA (Ping Seluruh Layanan)'}</span>
+            <svg className={`w-4 h-4 ${isPinging ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            <span>{isPinging ? 'Memeriksa SLA...' : 'Ping Seluruh Layanan'}</span>
           </button>
         </div>
       </div>
@@ -411,12 +416,16 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
       {/* Top 4 Infrastructure Metrics Cards (Penpot Board 1 Spec) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Status Go Fiber Core API */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Status Go Fiber Core API
             </span>
-            <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600 text-sm">🌐</span>
+            <span className="p-2 rounded-lg bg-blue-50 text-blue-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            </span>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
@@ -429,12 +438,16 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         </div>
 
         {/* Metric 2: Uptime Ketersediaan */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Uptime Ketersediaan
             </span>
-            <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-sm">⏱️</span>
+            <span className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
@@ -449,12 +462,16 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         </div>
 
         {/* Metric 3: PostgreSQL DB Connection */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               PostgreSQL DB Connection
             </span>
-            <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-sm">🐘</span>
+            <span className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+              </svg>
+            </span>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
@@ -469,12 +486,16 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
         </div>
 
         {/* Metric 4: Audit Trail Underwriting */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Audit Trail Underwriting
             </span>
-            <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600 text-sm">🛡️</span>
+            <span className="p-2 rounded-lg bg-purple-50 text-purple-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+            </span>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
@@ -541,10 +562,16 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                       onClick={() => handlePingRoute(route.id)}
                       disabled={pingingRouteId === route.id}
                       aria-label="Ping Rute"
-                      className="text-[11px] p-1 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                      className="p-1 rounded-md hover:bg-slate-200 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer disabled:opacity-50"
                       title="Ping Rute"
                     >
-                      {pingingRouteId === route.id ? '...' : '⚡'}
+                      {pingingRouteId === route.id ? (
+                        <span className="text-[10px] font-mono leading-none">...</span>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </div>
