@@ -458,10 +458,12 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              12 / 50 Pool
+              {overview.databaseStats
+                ? `${overview.databaseStats.openConnections} / ${overview.databaseStats.maxOpenConnections} Pool`
+                : '12 / 50 Pool'}
             </div>
             <div className="text-[11px] text-slate-500 font-medium mt-1">
-              Latency: 1.2ms (Healthy)
+              Latency: {services.find((s) => s.id === 'service_postgres')?.latencyMs ?? 1.2}ms (Healthy)
             </div>
           </div>
         </div>
@@ -476,7 +478,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              4,892 Logs
+              {(overview.subsystemStats?.totalAuditLogs ?? 4892).toLocaleString('en-US')} Logs
             </div>
             <div className="text-[11px] text-purple-600 font-semibold font-mono mt-1">
               SHA-256 Tamper-Proof
@@ -602,7 +604,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Connection pool idle: 38, active: 12. Transaction isolation: Read Committed.
+                  Connection pool idle: {overview.databaseStats?.idle ?? 38}, active: {overview.databaseStats?.inUse ?? 12}. Transaction isolation: Read Committed.
                 </p>
               </div>
 
@@ -615,7 +617,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  148 Knowledge chunks terindeks HNSW dengan cosine distance metric.
+                  {overview.subsystemStats?.totalKnowledgeChunks ?? 148} Knowledge chunks terindeks HNSW dengan cosine distance metric.
                 </p>
               </div>
 
@@ -624,11 +626,11 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-slate-900">Underwriting OCR Worker</h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 tracking-wider">
-                    READY
+                    {overview.subsystemStats?.workerStatus || 'READY'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Liveness biometric matching queue &amp; Dukcapil API bridge aktif.
+                  {overview.subsystemStats?.workerQueue || 'Liveness biometric matching queue & Dukcapil API bridge aktif.'}
                 </p>
               </div>
 
@@ -641,7 +643,9 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Migrations 001 s/d 008 (create_knowledge_chunks) up to date.
+                  {overview.subsystemStats
+                    ? `Migrations 001 s/d ${String(overview.subsystemStats.totalMigrations).padStart(3, '0')} (${overview.subsystemStats.latestMigration.replace(/^\d+_|\.sql$/g, '') || 'create_knowledge_chunks'}) up to date.`
+                    : 'Migrations 001 s/d 008 (create_knowledge_chunks) up to date.'}
                 </p>
               </div>
             </div>

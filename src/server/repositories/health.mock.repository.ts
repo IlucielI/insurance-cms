@@ -221,6 +221,20 @@ export class HealthMockRepository implements IHealthRepository {
           uptimeFormatted: '342j 18m aktif tanpa restart',
           statusCode: 200,
         },
+        databaseStats: {
+          openConnections: 12,
+          inUse: 12,
+          idle: 38,
+          maxOpenConnections: 50,
+        },
+        subsystemStats: {
+          totalAuditLogs: 4892,
+          totalKnowledgeChunks: 148,
+          totalMigrations: 8,
+          latestMigration: '008_create_knowledge_chunks.sql',
+          workerStatus: 'READY',
+          workerQueue: 'Liveness biometric matching queue & Dukcapil API bridge aktif.',
+        },
       })
     );
   }

@@ -59,6 +59,14 @@ interface CoreApiHealthOverviewResponse {
       idle?: number;
       max_open_connections?: number;
     };
+    subsystem_stats?: {
+      total_audit_logs?: number;
+      total_knowledge_chunks?: number;
+      total_migrations?: number;
+      latest_migration?: string;
+      worker_status?: string;
+      worker_queue?: string;
+    };
     recent_audit_logs?: CoreApiAuditLogItem[];
     audit_logs?: CoreApiAuditLogItem[];
     uptime?: string;
@@ -220,6 +228,28 @@ export class CoreApiHealthRepository implements IHealthRepository {
         statusCode: 200,
       };
 
+      const databaseStats = d.database_stats
+        ? {
+            openConnections: d.database_stats.open_connections ?? 12,
+            inUse: d.database_stats.in_use ?? 12,
+            idle: d.database_stats.idle ?? 38,
+            maxOpenConnections: d.database_stats.max_open_connections ?? 50,
+          }
+        : undefined;
+
+      const subsystemStats = d.subsystem_stats
+        ? {
+            totalAuditLogs: d.subsystem_stats.total_audit_logs ?? 4892,
+            totalKnowledgeChunks: d.subsystem_stats.total_knowledge_chunks ?? 148,
+            totalMigrations: d.subsystem_stats.total_migrations ?? 8,
+            latestMigration: d.subsystem_stats.latest_migration ?? '008_create_knowledge_chunks.sql',
+            workerStatus: d.subsystem_stats.worker_status ?? 'READY',
+            workerQueue:
+              d.subsystem_stats.worker_queue ??
+              'Liveness biometric matching queue & Dukcapil API bridge aktif.',
+          }
+        : undefined;
+
       return {
         cmsMetadata,
         overallStatus: (d.overall_status || d.overallStatus || 'online') as ServiceHealthStatus,
@@ -229,6 +259,8 @@ export class CoreApiHealthRepository implements IHealthRepository {
         services: services.length > 0 ? services : (await this.mockFallback.getSystemOverview()).services,
         auditLogs: auditLogs,
         apiMetadata,
+        databaseStats,
+        subsystemStats,
       };
     } catch (error) {
       if ((error as { status?: number }).status !== undefined) {

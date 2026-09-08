@@ -36,6 +36,22 @@ export interface ApiHealthMetadata {
   statusCode: number;
 }
 
+export interface DatabaseStats {
+  openConnections: number;
+  inUse: number;
+  idle: number;
+  maxOpenConnections: number;
+}
+
+export interface SubsystemStats {
+  totalAuditLogs: number;
+  totalKnowledgeChunks: number;
+  totalMigrations: number;
+  latestMigration: string;
+  workerStatus: string;
+  workerQueue: string;
+}
+
 export interface SystemHealthOverview {
   cmsMetadata: SystemMetadata;
   overallStatus: ServiceHealthStatus;
@@ -45,6 +61,8 @@ export interface SystemHealthOverview {
   services: ServiceHealthItem[];
   auditLogs: AuditLogEntry[];
   apiMetadata?: ApiHealthMetadata;
+  databaseStats?: DatabaseStats;
+  subsystemStats?: SubsystemStats;
 }
 
 export interface IHealthRepository {
