@@ -395,7 +395,7 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
         syncingDocuments: syncingDocs,
         totalChunks: totalChunks,
         vectorDimension: 1024,
-        modelName: 'text-embedding-3-large (1024-dim)',
+        modelName: 'BAAI/bge-m3 (1024-dim)',
         avgLatencyMs: Number(latency.toFixed(1)),
         indexHealthPercent: Math.round(health),
       };

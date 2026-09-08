@@ -16,6 +16,7 @@ import {
   reindexKnowledgeDocAction,
   simulateRagChatAction,
   fetchKnowledgeMetricsAction,
+  fetchKnowledgeDocumentsAction,
 } from './actions';
 import { UploadKnowledgeModal, UploadKnowledgeFileInfo } from '@/components/organisms/UploadKnowledgeModal';
 import { Modal } from '@/components/atoms/Modal';
@@ -35,7 +36,9 @@ const QUICK_PROMPTS = [
   'Berapa batas UP tanpa medical check-up?',
   'Apa syarat waiting period penyakit kritis?',
   'Bagaimana prosedur verifikasi biometrik Dukcapil?',
+  'Bagaimana alur penjaminan rawat inap cashless?',
   'Berapa biaya risiko sendiri (own risk) klaim mobil?',
+  'Kapan nasabah PEP wajib Enhanced Due Diligence (EDD)?',
 ];
 
 export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
@@ -83,6 +86,7 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isRefreshingDocs, setIsRefreshingDocs] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -96,6 +100,31 @@ export const KnowledgeBaseWorkbench: React.FC<KnowledgeBaseWorkbenchProps> = ({
       // ignore
     }
   };
+
+  const handleRefreshDocuments = async () => {
+    setIsRefreshingDocs(true);
+    try {
+      const updated = await fetchKnowledgeDocumentsAction();
+      setDocuments(updated);
+      await refreshMetrics();
+      showToast(`Berhasil memuat ${updated.length} dokumen knowledge base.`);
+    } catch {
+      showToast('Gagal memuat ulang dokumen.');
+    } finally {
+      setIsRefreshingDocs(false);
+    }
+  };
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    return {
+      all: documents.length,
+      underwriting: documents.filter((d) => d.category === 'underwriting').length,
+      product: documents.filter((d) => d.category === 'product').length,
+      claim_faq: documents.filter((d) => d.category === 'claim_faq').length,
+      compliance: documents.filter((d) => d.category === 'compliance').length,
+    };
+  }, [documents]);
 
   // Filtered documents
   const filteredDocuments = useMemo(() => {
@@ -291,14 +320,16 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
   };
 
   // Run AI Copilot RAG Simulation
-  const handleRunCopilot = async (queryText?: string) => {
+  const handleRunCopilot = async (queryText?: string, overrideCategory?: CategoryFilterKey) => {
     if (isLoadingChat) return;
     const q = (queryText ?? chatQuery).trim();
     if (!q) return;
 
+    const cat = overrideCategory !== undefined ? overrideCategory : copilotCategory;
+
     setIsLoadingChat(true);
     try {
-      const categoryParam = copilotCategory === 'all' ? undefined : copilotCategory;
+      const categoryParam = cat === 'all' ? undefined : (cat as KnowledgeCategory);
       const result = await simulateRagChatAction(q, categoryParam);
       setChatResult(result);
       setChatHistory((prev) => [{ query: q, response: result }, ...prev.slice(0, 4)]);
@@ -311,6 +342,48 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
       }
     } finally {
       setIsLoadingChat(false);
+    }
+  };
+
+  // Direct test of a document in RAG tester
+  const handleTestDocInRag = (doc: KnowledgeDocument) => {
+    const defaultQueries: Record<string, { query: string; category: CategoryFilterKey }> = {
+      doc_underwriting_up_medical: {
+        query: 'Apakah nasabah perokok berusia 42 tahun dengan UP 800jt wajib medical check-up?',
+        category: 'underwriting',
+      },
+      doc_critical_illness_waiting: {
+        query: 'Apa syarat waiting period penyakit kritis dan ketentuan pre-existing?',
+        category: 'product',
+      },
+      doc_dukcapil_biometric_ocr: {
+        query: 'Bagaimana prosedur verifikasi biometrik Dukcapil dan toleransi nama KTP?',
+        category: 'compliance',
+      },
+      doc_claim_cashless_inpatient: {
+        query: 'Bagaimana alur penjaminan rawat inap cashless dan penerbitan SJA?',
+        category: 'claim_faq',
+      },
+      doc_vehicle_allrisk_workshop: {
+        query: 'Berapa biaya risiko sendiri (own risk) klaim asuransi mobil All-Risk Auto Shield?',
+        category: 'product',
+      },
+      doc_aml_pep_screening: {
+        query: 'Kapan nasabah PEP wajib melalui Enhanced Due Diligence (EDD) dan lapor PPATK?',
+        category: 'compliance',
+      },
+    };
+
+    const target = defaultQueries[doc.id] || {
+      query: `Bagaimana ketentuan penting dalam dokumen ${doc.title}?`,
+      category: doc.category,
+    };
+
+    setChatQuery(target.query);
+    setCopilotCategory(target.category);
+    handleRunCopilot(target.query, target.category);
+    if (viewMode === 'catalog') {
+      setViewMode('split');
     }
   };
 
@@ -545,12 +618,22 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
-                    Daftar Knowledge Chunks (knowledge_chunks)
+                    Daftar Dokumen Regulasi &amp; Polis (knowledge_documents)
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Setiap chunk memiliki representasi vektor 1024-d untuk semantic similarity matching.
+                    Dokumen kebijakan &amp; SOP yang di-indeks ke pgvector (1024-d BGE-M3) untuk semantic retrieval.
                   </p>
                 </div>
+                {documents.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleRefreshDocuments}
+                    disabled={isRefreshingDocs}
+                    className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-semibold cursor-pointer disabled:opacity-50"
+                  >
+                    {isRefreshingDocs ? 'Memuat...' : 'Muat Ulang Dokumen 🔄'}
+                  </button>
+                )}
               </div>
 
               {/* Filters & Search */}
@@ -577,7 +660,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Underwriting
+                    Underwriting ({categoryCounts.underwriting})
                   </button>
                   <button
                     type="button"
@@ -588,7 +671,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Ketentuan Produk
+                    Ketentuan Produk ({categoryCounts.product})
                   </button>
                   <button
                     type="button"
@@ -599,7 +682,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Panduan Klaim &amp; FAQ
+                    Panduan Klaim &amp; FAQ ({categoryCounts.claim_faq})
                   </button>
                   <button
                     type="button"
@@ -610,7 +693,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Kepatuhan &amp; AML
+                    Kepatuhan &amp; AML ({categoryCounts.compliance})
                   </button>
                 </div>
 
@@ -646,16 +729,26 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                     <p className="text-xs text-slate-400">
                       Coba ubah kata kunci pencarian atau reset filter kategori dokumen.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryFilter('all');
-                        setSearchQuery('');
-                      }}
-                      className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 cursor-pointer"
-                    >
-                      Reset Filter
-                    </button>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategoryFilter('all');
+                          setSearchQuery('');
+                        }}
+                        className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 cursor-pointer"
+                      >
+                        Reset Filter
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRefreshDocuments}
+                        disabled={isRefreshingDocs}
+                        className="px-3.5 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 cursor-pointer disabled:opacity-50"
+                      >
+                        {isRefreshingDocs ? 'Memuat...' : 'Muat Ulang Dokumen 🔄'}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   filteredDocuments.map((doc, index) => {
@@ -707,8 +800,16 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                         )}
 
                         {/* Actions */}
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => handleTestDocInRag(doc)}
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer border border-indigo-200"
+                              title="Jalankan semantic retrieval tester menggunakan pertanyaan relevan untuk dokumen ini"
+                            >
+                              🎯 Uji RAG
+                            </button>
                             <button
                               type="button"
                               onClick={() => setDetailDoc(doc)}
@@ -748,8 +849,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
 
               {/* Column Footer */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center text-[11px] text-slate-500 font-medium">
-                Menampilkan {filteredDocuments.length} dari {documents.length} Dokumen • Menggunakan OpenAI
-                text-embedding-3-small (1024-d)
+                Menampilkan {filteredDocuments.length} dari {documents.length} Dokumen • pgvector Active (1024-d BGE-M3)
               </div>
             </div>
           </div>
@@ -816,10 +916,10 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                 {/* Quick Prompts */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Contoh Query Cepat:
+                    Contoh Query Cepat (Valid Sesuai Dokumen Polis):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {QUICK_PROMPTS.slice(0, 4).map((p) => (
+                    {QUICK_PROMPTS.map((p) => (
                       <button
                         key={p}
                         type="button"
@@ -828,7 +928,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                           setChatQuery(p);
                           handleRunCopilot(p);
                         }}
-                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 transition-colors text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 transition-colors text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {p}
                       </button>
@@ -863,24 +963,40 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
 
                   {/* Sources Cards */}
                   <div className="space-y-2">
-                    {chatResult.sources.map((src, idx) => (
-                      <div
-                        key={src.id}
-                        className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-1"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                            Rank #{idx + 1} • Similarity: {src.score} (
-                            {src.score > 0.9 ? 'Sangat Relevan' : 'Relevan'})
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-400">Match</span>
+                    {chatResult.sources.map((src, idx) => {
+                      const isHighRelevance = src.score >= 0.65;
+                      const isMediumRelevance = src.score >= 0.5;
+                      const badgeLabel = isHighRelevance
+                        ? 'Sangat Relevan (High)'
+                        : isMediumRelevance
+                        ? 'Relevan'
+                        : 'Relevansi Rendah';
+                      const badgeClass = isHighRelevance
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : isMediumRelevance
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-slate-100 text-slate-700';
+
+                      return (
+                        <div
+                          key={src.id}
+                          className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-1"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${badgeClass}`}
+                            >
+                              Rank #{idx + 1} • Similarity: {src.score} ({badgeLabel})
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-400">Match</span>
+                          </div>
+                          <h4 className="text-xs font-bold text-slate-900 mt-1">{src.title}</h4>
+                          <p className="text-[11px] text-slate-600 leading-relaxed italic">
+                            &ldquo;{src.excerpt}&rdquo;
+                          </p>
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 mt-1">{src.title}</h4>
-                        <p className="text-[11px] text-slate-600 leading-relaxed italic">
-                          &ldquo;{src.excerpt}&rdquo;
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Grounded LLM Synthesis Box */}
@@ -944,10 +1060,10 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
 
               {/* Bottom API connection notice */}
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                <span>POST /api/v1/assistant/chat</span>
+                <span>POST /api/v1/knowledge/simulate-chat</span>
                 <span className="text-emerald-600 font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Live Core API
+                  Live Core API (pgvector)
                 </span>
               </div>
             </div>
