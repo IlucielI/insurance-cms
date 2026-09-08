@@ -130,7 +130,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
       category: item.category,
       targetResource: item.target_resource || item.targetResource || '-',
       ipAddress: item.ip_address || item.ipAddress || '127.0.0.1',
-      status: (item.status as AuditSeverity) || 'SUCCESS',
+      status: ((item.status ? item.status.toUpperCase() : 'SUCCESS') as AuditSeverity),
       details: item.details || {},
     };
   }
