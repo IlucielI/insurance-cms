@@ -58,18 +58,10 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   }
 
   private resolveBaseUrl(): string {
-    if (typeof window !== 'undefined') {
-      return (
-        process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-        process.env.CORE_API_URL?.trim() ||
-        ''
-      );
-    }
     return (
-      process.env.CORE_API_INTERNAL_URL?.trim() ||
       process.env.CORE_API_URL?.trim() ||
-      process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-      ''
+      process.env.CORE_API_INTERNAL_URL?.trim() ||
+      'http://localhost:8080'
     );
   }
 
@@ -221,7 +213,7 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   async findAll(params?: ApplicationFilterParams): Promise<UnderwritingDossier[]> {
     if (!this.baseUrl) {
       throw new Error(
-        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+        'Core API URL is not configured. Please set CORE_API_URL, or enable MOCK_CORE_API=true.'
       );
     }
 
@@ -266,7 +258,7 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   async findById(id: string): Promise<UnderwritingDossier | null> {
     if (!this.baseUrl) {
       throw new Error(
-        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+        'Core API URL is not configured. Please set CORE_API_URL, or enable MOCK_CORE_API=true.'
       );
     }
 
@@ -298,7 +290,7 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   ): Promise<UnderwritingDossier> {
     if (!this.baseUrl) {
       throw new Error(
-        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+        'Core API URL is not configured. Please set CORE_API_URL, or enable MOCK_CORE_API=true.'
       );
     }
 
@@ -360,7 +352,7 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
   ): Promise<UnderwritingDossier> {
     if (!this.baseUrl) {
       throw new Error(
-        'Core API URL is not configured. Please set NEXT_PUBLIC_CORE_API_URL or CORE_API_INTERNAL_URL, or enable MOCK_CORE_API=true.'
+        'Core API URL is not configured. Please set CORE_API_URL, or enable MOCK_CORE_API=true.'
       );
     }
 

@@ -74,18 +74,10 @@ export class CoreApiDashboardRepository implements IDashboardRepository {
   }
 
   private resolveBaseUrl(): string {
-    if (typeof window !== 'undefined') {
-      return (
-        process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-        process.env.CORE_API_URL?.trim() ||
-        ''
-      );
-    }
     return (
-      process.env.CORE_API_INTERNAL_URL?.trim() ||
       process.env.CORE_API_URL?.trim() ||
-      process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-      ''
+      process.env.CORE_API_INTERNAL_URL?.trim() ||
+      'http://localhost:8080'
     );
   }
 
