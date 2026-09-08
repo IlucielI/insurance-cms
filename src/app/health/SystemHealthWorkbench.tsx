@@ -246,10 +246,10 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
   // Filtered Audit Logs with comprehensive search matching
   const filteredAuditLogs = useMemo(() => {
     return auditLogs.filter((log) => {
-      if (categoryFilter !== 'all' && log.category !== categoryFilter) {
+      if (categoryFilter !== 'all' && log.category?.toLowerCase() !== categoryFilter.toLowerCase()) {
         return false;
       }
-      if (statusFilter !== 'all' && log.status !== statusFilter) {
+      if (statusFilter !== 'all' && log.status?.toUpperCase() !== statusFilter.toUpperCase()) {
         return false;
       }
       if (searchQuery.trim()) {
