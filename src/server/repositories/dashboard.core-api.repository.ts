@@ -334,13 +334,6 @@ export class CoreApiDashboardRepository implements IDashboardRepository {
         });
       }
 
-      // If topProducts has fewer than 3, supplement from mock to keep 3 cards visually stable
-      if (topProducts.length < 3) {
-        const fallbackData = await this.mockFallback.getDashboardData();
-        const needed = 3 - topProducts.length;
-        topProducts = [...topProducts, ...fallbackData.topProducts.slice(topProducts.length, topProducts.length + needed)];
-      }
-
       return {
         kpis,
         recentQueue,
