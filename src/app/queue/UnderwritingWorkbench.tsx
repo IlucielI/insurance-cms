@@ -625,48 +625,6 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
                   <span>Tolak Pengajuan</span>
                 </button>
               </div>
-
-              {/* Internal Notes Textarea */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="internal-notes"
-                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
-                >
-                  Catatan Audit Underwriter (Internal Note):
-                </label>
-                <textarea
-                  id="internal-notes"
-                  rows={3}
-                  value={currentNote}
-                  onChange={(e) =>
-                    setEditedNotes((prev) => ({
-                      ...prev,
-                      [activeDossier.id]: e.target.value,
-                    }))
-                  }
-                  className="w-full p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 font-sans focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Audit Signature & Save Button */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-                <div className="space-y-0.5">
-                  <span className="text-slate-500 font-medium block">
-                    {activeDossier.auditSignature}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 block truncate max-w-md">
-                    Audit Hash: {activeDossier.auditHash}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSaveNotes}
-                  className="px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold text-xs shadow-sm hover:bg-slate-800 transition-colors shrink-0"
-                >
-                  Simpan Keputusan 💾
-                </button>
-              </div>
             </div>
           </div>
         )}

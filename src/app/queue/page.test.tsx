@@ -147,19 +147,12 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     });
   });
 
-  it('should save internal notes when clicking Simpan Keputusan button', async () => {
+  it('does not render internal audit notes section in decision card', async () => {
     const initialQueue = await applicationService.getQueue();
     render(<UnderwritingWorkbench initialQueue={initialQueue} />);
 
-    const textarea = screen.getByLabelText(/Catatan Audit Underwriter/i);
-    fireEvent.change(textarea, { target: { value: 'Catatan terupdate oleh lead underwriter.' } });
-
-    const saveBtn = screen.getByText('Simpan Keputusan 💾');
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Catatan audit internal untuk .* berhasil disimpan/i)).toBeDefined();
-    });
+    expect(screen.queryByLabelText(/Catatan Audit Underwriter/i)).toBeNull();
+    expect(screen.queryByText('Simpan Keputusan 💾')).toBeNull();
   });
 
   it('should handle toast dismiss, sync button, and empty search state', async () => {
