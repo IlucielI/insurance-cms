@@ -291,11 +291,11 @@ export default async function HomePage() {
               Belum ada data performa kontribusi polis aktif saat ini.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-wrap justify-center gap-6">
               {data.topProducts.map((prod) => (
                 <div
                   key={prod.slug}
-                  className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
+                  className="w-full md:w-[calc(33.333%-1rem)] bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
                 >
                   <div>
                     {/* Top Bar: Category & Rank Badge */}

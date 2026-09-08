@@ -214,6 +214,27 @@ export class HealthMockRepository implements IHealthRepository {
         avgLatencyMs,
         services: this.services,
         auditLogs: this.auditLogs,
+        apiMetadata: {
+          version: '1.2.0',
+          gitHash: '9a4f2b1',
+          uptime: '342h18m',
+          uptimeFormatted: '342j 18m aktif tanpa restart',
+          statusCode: 200,
+        },
+        databaseStats: {
+          openConnections: 12,
+          inUse: 12,
+          idle: 38,
+          maxOpenConnections: 50,
+        },
+        subsystemStats: {
+          totalAuditLogs: 4892,
+          totalKnowledgeChunks: 148,
+          totalMigrations: 8,
+          latestMigration: '008_create_knowledge_chunks.sql',
+          workerStatus: 'READY',
+          workerQueue: 'Liveness biometric matching queue & Dukcapil API bridge aktif.',
+        },
       })
     );
   }

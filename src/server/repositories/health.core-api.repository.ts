@@ -59,8 +59,19 @@ interface CoreApiHealthOverviewResponse {
       idle?: number;
       max_open_connections?: number;
     };
+    subsystem_stats?: {
+      total_audit_logs?: number;
+      total_knowledge_chunks?: number;
+      total_migrations?: number;
+      latest_migration?: string;
+      worker_status?: string;
+      worker_queue?: string;
+    };
     recent_audit_logs?: CoreApiAuditLogItem[];
     audit_logs?: CoreApiAuditLogItem[];
+    uptime?: string;
+    version?: string;
+    git_hash?: string;
   };
 }
 
@@ -92,19 +103,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
   }
 
   private resolveBaseUrl(): string {
-    if (typeof window !== 'undefined') {
-      return (
-        process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-        process.env.CORE_API_URL?.trim() ||
-        ''
-      );
-    }
-    return (
-      process.env.CORE_API_INTERNAL_URL?.trim() ||
-      process.env.CORE_API_URL?.trim() ||
-      process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-      ''
-    );
+    return process.env.CORE_API_URL?.trim() || '';
   }
 
   private mapServiceItem(item: CoreApiServiceItem): ServiceHealthItem {
@@ -115,7 +114,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
       endpoint: item.endpoint,
       status: (item.status as ServiceHealthStatus) || 'online',
       latencyMs: item.latency_ms ?? item.latencyMs ?? 0,
-      uptimePercentage: item.uptime_percentage ?? item.uptimePercentage ?? 99.9,
+      uptimePercentage: item.uptime_percentage ?? item.uptimePercentage ?? 100,
       lastChecked: item.last_checked || item.lastChecked || new Date().toISOString(),
     };
   }
@@ -209,6 +208,36 @@ export class CoreApiHealthRepository implements IHealthRepository {
         avgLatency = services.length > 0 ? Number((totalLat / services.length).toFixed(1)) : 0;
       }
 
+      const apiMetadata = {
+        version: d.version || '0.1.0',
+        gitHash: d.git_hash || 'dev',
+        uptime: d.uptime || '0s',
+        uptimeFormatted: d.uptime ? this.formatApiUptime(d.uptime) : '1m aktif tanpa restart',
+        statusCode: 200,
+      };
+
+      const databaseStats = d.database_stats
+        ? {
+            openConnections: d.database_stats.open_connections ?? 12,
+            inUse: d.database_stats.in_use ?? 12,
+            idle: d.database_stats.idle ?? 38,
+            maxOpenConnections: d.database_stats.max_open_connections ?? 50,
+          }
+        : undefined;
+
+      const subsystemStats = d.subsystem_stats
+        ? {
+            totalAuditLogs: d.subsystem_stats.total_audit_logs ?? 4892,
+            totalKnowledgeChunks: d.subsystem_stats.total_knowledge_chunks ?? 148,
+            totalMigrations: d.subsystem_stats.total_migrations ?? 8,
+            latestMigration: d.subsystem_stats.latest_migration ?? '008_create_knowledge_chunks.sql',
+            workerStatus: d.subsystem_stats.worker_status ?? 'READY',
+            workerQueue:
+              d.subsystem_stats.worker_queue ??
+              'Liveness biometric matching queue & Dukcapil API bridge aktif.',
+          }
+        : undefined;
+
       return {
         cmsMetadata,
         overallStatus: (d.overall_status || d.overallStatus || 'online') as ServiceHealthStatus,
@@ -217,6 +246,9 @@ export class CoreApiHealthRepository implements IHealthRepository {
         avgLatencyMs: avgLatency,
         services: services.length > 0 ? services : (await this.mockFallback.getSystemOverview()).services,
         auditLogs: auditLogs,
+        apiMetadata,
+        databaseStats,
+        subsystemStats,
       };
     } catch (error) {
       if ((error as { status?: number }).status !== undefined) {
@@ -224,6 +256,26 @@ export class CoreApiHealthRepository implements IHealthRepository {
       }
       return this.mockFallback.getSystemOverview();
     }
+  }
+
+  private formatApiUptime(uptimeStr?: string): string {
+    if (!uptimeStr) return '1m aktif tanpa restart';
+    let hours = 0;
+    let minutes = 0;
+    const hMatch = uptimeStr.match(/(\d+)h/);
+    if (hMatch) hours = parseInt(hMatch[1], 10);
+    const mMatch = uptimeStr.match(/(\d+)m/);
+    if (mMatch) minutes = parseInt(mMatch[1], 10);
+    const sMatch = uptimeStr.match(/(\d+(\.\d+)?)s/);
+    const seconds = sMatch ? parseFloat(sMatch[1]) : 0;
+
+    if (hours > 0) {
+      return `${hours}j ${minutes}m aktif tanpa restart`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m aktif tanpa restart`;
+    }
+    return `${Math.max(1, Math.round(seconds))}d aktif tanpa restart`;
   }
 
   async pingServices(serviceId?: string): Promise<ServiceHealthItem[]> {

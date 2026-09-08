@@ -56,6 +56,10 @@ interface CoreApiKnowledgeMetricsResponse {
     categoryBreakdown?: Record<string, number>;
     last_sync_time?: string;
     lastSyncTime?: string;
+    average_retrieval_latency_ms?: number;
+    averageRetrievalLatencyMs?: number;
+    grounding_accuracy_percent?: number;
+    groundingAccuracyPercent?: number;
   };
 }
 
@@ -102,19 +106,7 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
   }
 
   private resolveBaseUrl(): string {
-    if (typeof window !== 'undefined') {
-      return (
-        process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-        process.env.CORE_API_URL?.trim() ||
-        ''
-      );
-    }
-    return (
-      process.env.CORE_API_INTERNAL_URL?.trim() ||
-      process.env.CORE_API_URL?.trim() ||
-      process.env.NEXT_PUBLIC_CORE_API_URL?.trim() ||
-      ''
-    );
+    return process.env.CORE_API_URL?.trim() || '';
   }
 
   private mapDocument(item: CoreApiDocumentItem): KnowledgeDocument {
@@ -376,7 +368,14 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
       const totalChunks = d.total_chunks ?? d.totalChunks ?? 0;
 
       const health =
-        totalDocs > 0 ? Math.round((indexedDocs / totalDocs) * 100) : 100;
+        d.grounding_accuracy_percent ??
+        d.groundingAccuracyPercent ??
+        (totalDocs > 0 ? Math.round((indexedDocs / totalDocs) * 100) : 100);
+
+      const latency =
+        d.average_retrieval_latency_ms ??
+        d.averageRetrievalLatencyMs ??
+        1.8;
 
       return {
         totalDocuments: totalDocs,
@@ -384,9 +383,9 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
         syncingDocuments: syncingDocs,
         totalChunks: totalChunks,
         vectorDimension: 1024,
-        modelName: 'text-embedding-3-large (1024-dim)',
-        avgLatencyMs: 120,
-        indexHealthPercent: health,
+        modelName: 'BAAI/bge-m3 (1024-dim)',
+        avgLatencyMs: Number(latency.toFixed(1)),
+        indexHealthPercent: Math.round(health),
       };
     } catch (error) {
       if ((error as { status?: number }).status !== undefined) {

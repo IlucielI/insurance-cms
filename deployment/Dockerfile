@@ -1,4 +1,5 @@
-FROM insurance-cms-base:latest AS builder
+ARG BASE_IMAGE=nbsbayu/insurance-cms-base:latest
+FROM ${BASE_IMAGE} AS builder
 
 ARG APP_VERSION=0.1.0
 ARG GIT_HASH=dev

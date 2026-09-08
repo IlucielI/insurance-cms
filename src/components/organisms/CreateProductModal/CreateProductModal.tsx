@@ -244,7 +244,21 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
               </label>
               <Select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as 'life' | 'health' | 'vehicle')}
+                onChange={(e) => {
+                  const newCat = e.target.value as 'life' | 'health' | 'vehicle';
+                  setCategory(newCat);
+                  if (newCat === 'vehicle') {
+                    if (minAge === 18 && maxAge === 60) {
+                      setMinAge(0);
+                      setMaxAge(15);
+                    }
+                  } else {
+                    if (minAge === 0 && maxAge === 15) {
+                      setMinAge(18);
+                      setMaxAge(60);
+                    }
+                  }
+                }}
                 options={[
                   { value: 'life', label: 'Asuransi Jiwa & Keluarga (life)' },
                   { value: 'health', label: 'Asuransi Kesehatan (health)' },
@@ -315,7 +329,7 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-semibold text-slate-700">
-                Batas Usia Masuk (Min - Maks):
+                {category === 'vehicle' ? 'Batas Usia Kendaraan (Min - Maks Tahun):' : 'Batas Usia Masuk (Min - Maks):'}
               </label>
               <div className="flex items-center gap-2">
                 <input

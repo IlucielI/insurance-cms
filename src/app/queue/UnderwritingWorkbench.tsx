@@ -32,7 +32,7 @@ export interface UnderwritingWorkbenchProps {
   actions?: UnderwritingWorkbenchActions;
 }
 
-type TabKey = 'review_needed' | 'submitted' | 'approved' | 'rejected';
+type TabKey = 'submitted' | 'review_needed' | 'approved' | 'rejected';
 
 const resolvePillarModalStatus = (status: string): 'PASSED' | 'FLAGGED' | 'FAILED' | 'WAIVED' => {
   if (status === 'UNDER_REVIEW') return 'FLAGGED';
@@ -51,10 +51,10 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
     if (initialSelectedId && initialQueue.some((d) => d.id === initialSelectedId)) {
       return initialSelectedId;
     }
-    const firstReviewNeeded = initialQueue.find((d) => d.status === 'under_review');
-    return firstReviewNeeded?.id || initialQueue[0]?.id || '#APP-2026-8819';
+    const firstSubmitted = initialQueue.find((d) => d.status === 'submitted' || d.status === 'rfi_requested');
+    return firstSubmitted?.id || initialQueue.find((d) => d.status === 'under_review')?.id || initialQueue[0]?.id || '#APP-2026-8819';
   });
-  const [activeTab, setActiveTab] = useState<TabKey>('review_needed');
+  const [activeTab, setActiveTab] = useState<TabKey>('submitted');
   const [searchQuery, setSearchQuery] = useState('');
   const [productFilter, setProductFilter] = useState('all');
 
@@ -302,17 +302,6 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
               <button
                 type="button"
-                onClick={() => setActiveTab('review_needed')}
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                  activeTab === 'review_needed'
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                Perlu Review ({tabCounts.review_needed})
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab('submitted')}
                 className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                   activeTab === 'submitted'
@@ -321,6 +310,17 @@ export const UnderwritingWorkbench: React.FC<UnderwritingWorkbenchProps> = ({
                 }`}
               >
                 Submitted Baru ({tabCounts.submitted})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('review_needed')}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'review_needed'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Perlu Review ({tabCounts.review_needed})
               </button>
               <button
                 type="button"
