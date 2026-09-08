@@ -24,6 +24,13 @@ const DEFAULT_AGE_FACTORS: AgeFactor[] = [
   { minAge: 51, maxAge: 60, factor: 2.5 },
 ];
 
+const DEFAULT_VEHICLE_AGE_FACTORS: AgeFactor[] = [
+  { minAge: 0, maxAge: 3, factor: 1.0 },
+  { minAge: 4, maxAge: 7, factor: 1.15 },
+  { minAge: 8, maxAge: 12, factor: 1.35 },
+  { minAge: 13, maxAge: 20, factor: 1.6 },
+];
+
 export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   isOpen,
   onClose,
@@ -31,20 +38,26 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   onOpenSandbox,
   onSavePricingRules,
 }) => {
+  const checkIsVehicle = (p?: InsuranceProduct | null) =>
+    p?.category === 'vehicle' ||
+    (p as { categoryKey?: string })?.categoryKey === 'vehicle' ||
+    p?.slug?.toLowerCase().includes('auto') ||
+    p?.slug?.toLowerCase().includes('vehicle');
+
   const getInitialBaseRate = (p?: InsuranceProduct | null) =>
-    p?.pricingRules?.baseRate ? Number((p.pricingRules.baseRate * 1000).toFixed(2)) : 3.5;
+    p?.pricingRules?.baseRate ? Number((p.pricingRules.baseRate * 1000).toFixed(2)) : (checkIsVehicle(p) ? 12.0 : 3.5);
 
   const getInitialAnnualDiscount = (p?: InsuranceProduct | null) =>
-    p?.pricingRules?.annualDiscountPct ?? 8.0;
+    p?.pricingRules?.annualDiscountPct ?? (checkIsVehicle(p) ? 10.0 : 8.0);
 
   const getInitialNonMcuLimit = (p?: InsuranceProduct | null) =>
-    p?.pricingRules?.nonMcuLimit ?? 1000000000;
+    p?.pricingRules?.nonMcuLimit ?? (checkIsVehicle(p) ? 500000000 : 1000000000);
 
   const getInitialAgeFactors = (p?: InsuranceProduct | null): AgeFactor[] => {
     if (p?.pricingRules?.ageFactors && p.pricingRules.ageFactors.length > 0) {
       return p.pricingRules.ageFactors.map((af) => ({ ...af }));
     }
-    return DEFAULT_AGE_FACTORS.map((af) => ({ ...af }));
+    return (checkIsVehicle(p) ? DEFAULT_VEHICLE_AGE_FACTORS : DEFAULT_AGE_FACTORS).map((af) => ({ ...af }));
   };
 
   // Section 1: Base Rate, Tenor, Discount, Non-MCU Limit
@@ -125,8 +138,8 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
   const handleAddBracket = () => {
     setAgeFactors((prev) => {
       const last = prev[prev.length - 1];
-      const nextMin = last ? last.maxAge + 1 : 18;
-      const nextMax = nextMin + 9;
+      const nextMin = last ? last.maxAge + 1 : (isVehicle ? 0 : 18);
+      const nextMax = nextMin + (isVehicle ? 3 : 9);
       const nextFactor = last ? Number((last.factor + 0.25).toFixed(2)) : 1.0;
       return [...prev, { minAge: nextMin, maxAge: nextMax, factor: nextFactor }];
     });
@@ -198,13 +211,17 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
 
     // 3. Validasi Multipliers Demografi & Loading
     const factors = [
-      { name: 'Gender Pria', val: genderMale },
-      { name: 'Gender Wanita', val: genderFemale },
-      { name: 'Perokok Aktif', val: smokerYes },
-      { name: 'Bebas Rokok', val: smokerNo },
-      { name: 'Pekerjaan Risiko Rendah', val: occLow },
-      { name: 'Pekerjaan Risiko Standar', val: occStandard },
-      { name: 'Pekerjaan Risiko Tinggi', val: occHigh },
+      ...(!isVehicle
+        ? [
+            { name: 'Gender Pria', val: genderMale },
+            { name: 'Gender Wanita', val: genderFemale },
+            { name: 'Perokok Aktif', val: smokerYes },
+            { name: 'Bebas Rokok', val: smokerNo },
+          ]
+        : []),
+      { name: isVehicle ? 'Penggunaan Pribadi / Santai' : 'Pekerjaan Risiko Rendah', val: occLow },
+      { name: isVehicle ? 'Penggunaan Harian Kota' : 'Pekerjaan Risiko Standar', val: occStandard },
+      { name: isVehicle ? 'Penggunaan Komersial / Logistik' : 'Pekerjaan Risiko Tinggi', val: occHigh },
       { name: 'Frekuensi Tahunan', val: freqAnnual },
       { name: 'Frekuensi Semesteran', val: freqSemiAnnual },
       { name: 'Frekuensi Kuartalan', val: freqQuarterly },
@@ -223,14 +240,18 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
         ...product.pricingRules,
         baseRate: baseRatePermil / 1000,
         ageFactors,
-        genderFactors: {
-          male: genderMale,
-          female: genderFemale,
-        },
-        smokerFactors: {
-          yes: smokerYes,
-          no: smokerNo,
-        },
+        genderFactors: isVehicle
+          ? { male: 1.0, female: 1.0 }
+          : {
+              male: genderMale,
+              female: genderFemale,
+            },
+        smokerFactors: isVehicle
+          ? { yes: 1.0, no: 1.0 }
+          : {
+              yes: smokerYes,
+              no: smokerNo,
+            },
         occupationFactors: {
           low: occLow,
           standard: occStandard,
@@ -411,14 +432,16 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="block text-xs font-bold uppercase tracking-wider text-slate-800">
-              2. TABEL KOEFISIEN MULTIPLIER USIA MASUK (DYNAMIC BRACKETS)
+              {isVehicle
+                ? '2. TABEL KOEFISIEN MULTIPLIER USIA KENDARAAN (DYNAMIC BRACKETS)'
+                : '2. TABEL KOEFISIEN MULTIPLIER USIA MASUK (DYNAMIC BRACKETS)'}
             </span>
             <button
               type="button"
               onClick={handleAddBracket}
               className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
             >
-              + Tambah Rentang Usia
+              {isVehicle ? '+ Tambah Rentang Usia Kendaraan' : '+ Tambah Rentang Usia'}
             </button>
           </div>
 
@@ -428,7 +451,9 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
               return (
                 <div key={idx} className="p-2.5 flex flex-wrap items-center justify-between gap-2 bg-white/70">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600">Usia:</span>
+                    <span className="text-xs font-semibold text-slate-600">
+                      {isVehicle ? 'Usia Kendaraan:' : 'Usia:'}
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -491,95 +516,101 @@ export const PricingRulesModal: React.FC<PricingRulesModalProps> = ({
         {/* Section 3: Matriks Multipliers Demografi, Gaya Hidup & Pekerjaan */}
         <div className="space-y-2">
           <span className="block text-xs font-bold uppercase tracking-wider text-slate-800">
-            3. MATRIKS PENGALI DEMOGRAFI, GAYA HIDUP &amp; PEKERJAAN (`rule_type: multiplier_map`)
+            {isVehicle
+              ? '3. MATRIKS PENGALI PENGGUNAAN KENDARAAN & CARA BAYAR (`rule_type: multiplier_map`)'
+              : '3. MATRIKS PENGALI DEMOGRAFI, GAYA HIDUP & PEKERJAAN (`rule_type: multiplier_map`)'}
           </span>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${isVehicle ? 'lg:grid-cols-2' : 'lg:grid-cols-4'} gap-3`}>
             {/* Gender Box */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-              <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
-                <span>⚧</span>
-                <span>Faktor Jenis Kelamin:</span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Pria:</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max="3.0"
-                      value={genderMale}
-                      onChange={(e) => setGenderMale(Number(e.target.value))}
-                      className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
-                      aria-label="Faktor Jenis Kelamin Pria"
-                    />
-                    <span className="text-xs font-mono text-slate-500">x</span>
+            {!isVehicle && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
+                  <span>⚧</span>
+                  <span>Faktor Jenis Kelamin:</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[11px] font-medium text-slate-600">Pria:</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        max="3.0"
+                        value={genderMale}
+                        onChange={(e) => setGenderMale(Number(e.target.value))}
+                        className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
+                        aria-label="Faktor Jenis Kelamin Pria"
+                      />
+                      <span className="text-xs font-mono text-slate-500">x</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[11px] font-medium text-slate-600">Wanita:</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        max="3.0"
+                        value={genderFemale}
+                        onChange={(e) => setGenderFemale(Number(e.target.value))}
+                        className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
+                        aria-label="Faktor Jenis Kelamin Wanita"
+                      />
+                      <span className="text-xs font-mono text-slate-500">x</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Wanita:</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max="3.0"
-                      value={genderFemale}
-                      onChange={(e) => setGenderFemale(Number(e.target.value))}
-                      className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
-                      aria-label="Faktor Jenis Kelamin Wanita"
-                    />
-                    <span className="text-xs font-mono text-slate-500">x</span>
-                  </div>
-                </div>
+                <span className="block text-[10px] text-slate-400">Aturan Aktuaria Tabel TM4</span>
               </div>
-              <span className="block text-[10px] text-slate-400">Aturan Aktuaria Tabel TM4</span>
-            </div>
+            )}
 
             {/* Smoker Box */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-              <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
-                <span>🚬</span>
-                <span>Faktor Status Merokok:</span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Perokok:</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max="3.0"
-                      value={smokerYes}
-                      onChange={(e) => setSmokerYes(Number(e.target.value))}
-                      className="w-16 px-1.5 py-0.5 bg-white border border-rose-300 rounded text-center text-xs font-mono font-bold text-rose-700"
-                      aria-label="Faktor Perokok Aktif"
-                    />
-                    <span className="text-xs font-mono text-slate-500">x</span>
+            {!isVehicle && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="font-bold text-slate-800 text-xs flex items-center gap-1">
+                  <span>🚬</span>
+                  <span>Faktor Status Merokok:</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[11px] font-medium text-slate-600">Perokok:</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        max="3.0"
+                        value={smokerYes}
+                        onChange={(e) => setSmokerYes(Number(e.target.value))}
+                        className="w-16 px-1.5 py-0.5 bg-white border border-rose-300 rounded text-center text-xs font-mono font-bold text-rose-700"
+                        aria-label="Faktor Perokok Aktif"
+                      />
+                      <span className="text-xs font-mono text-slate-500">x</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[11px] font-medium text-slate-600">Bebas Rokok:</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.5"
+                        max="3.0"
+                        value={smokerNo}
+                        onChange={(e) => setSmokerNo(Number(e.target.value))}
+                        className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
+                        aria-label="Faktor Bebas Rokok"
+                      />
+                      <span className="text-xs font-mono text-slate-500">x</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-600">Bebas Rokok:</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max="3.0"
-                      value={smokerNo}
-                      onChange={(e) => setSmokerNo(Number(e.target.value))}
-                      className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-900"
-                      aria-label="Faktor Bebas Rokok"
-                    />
-                    <span className="text-xs font-mono text-slate-500">x</span>
-                  </div>
-                </div>
+                <span className="block text-[10px] text-slate-400">Loading +{Math.round((smokerYes - 1) * 100)}% perokok aktif</span>
               </div>
-              <span className="block text-[10px] text-slate-400">Loading +{Math.round((smokerYes - 1) * 100)}% perokok aktif</span>
-            </div>
+            )}
 
             {/* Occupation / Vehicle Usage Box */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
