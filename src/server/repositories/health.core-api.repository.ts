@@ -216,7 +216,7 @@ export class CoreApiHealthRepository implements IHealthRepository {
         totalServicesCount,
         avgLatencyMs: avgLatency,
         services: services.length > 0 ? services : (await this.mockFallback.getSystemOverview()).services,
-        auditLogs: auditLogs.length > 0 ? auditLogs : (await this.mockFallback.getSystemOverview()).auditLogs,
+        auditLogs: auditLogs,
       };
     } catch (error) {
       if ((error as { status?: number }).status !== undefined) {
