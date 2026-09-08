@@ -45,6 +45,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [productToDuplicate, setProductToDuplicate] = useState<InsuranceProduct | null>(null);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<InsuranceProduct | null>(null);
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<InsuranceProduct | null>(null);
   const [isSandboxModalOpen, setIsSandboxModalOpen] = useState(false);
@@ -54,6 +55,23 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+  };
+
+  const handleDuplicateProduct = (product: InsuranceProduct) => {
+    let newSlug = `${product.slug}-copy`;
+    let counter = 2;
+    const existingSlugList = products.map((p) => p.slug.toLowerCase());
+    while (existingSlugList.includes(newSlug.toLowerCase())) {
+      newSlug = `${product.slug}-copy-${counter}`;
+      counter++;
+    }
+
+    setProductToDuplicate({
+      ...product,
+      name: `${product.name} (Salinan)`,
+      slug: newSlug,
+    });
+    setIsCreateModalOpen(true);
   };
 
   const refreshMetrics = async () => {
@@ -132,11 +150,17 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
     };
 
     try {
-      const created = await createProductAction(createPayload);
+      const result = await createProductAction(createPayload);
+      if ('error' in result && result.error) {
+        showToast(result.error);
+        throw new Error(result.error);
+      }
+      const created = result as InsuranceProduct;
       setProducts((prev) => [...prev, created]);
       await refreshMetrics();
       showToast(`Produk baru "${created.name}" berhasil ditambahkan.`);
       setIsCreateModalOpen(false);
+      setProductToDuplicate(null);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Gagal menambahkan produk baru.';
@@ -161,9 +185,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
       };
 
       const res = await updateProductAction(updated.id, updatePayload);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        throw new Error(res.error);
+      }
+      const updatedProduct = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
       await refreshMetrics();
-      showToast(`Produk "${res.name}" berhasil diperbarui.`);
+      showToast(`Produk "${updatedProduct.name}" berhasil diperbarui.`);
       setSelectedProductForEdit(null);
     } catch (err: unknown) {
       const message =
@@ -177,9 +206,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   const handleArchiveProduct = async (productId: string) => {
     try {
       const res = await archiveProductAction(productId);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        return;
+      }
+      const archived = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === archived.id ? archived : p)));
       await refreshMetrics();
-      showToast(`Produk "${res.name}" berhasil diarsipkan.`);
+      showToast(`Produk "${archived.name}" berhasil diarsipkan.`);
       setSelectedProductForEdit(null);
     } catch (err: unknown) {
       const message =
@@ -197,9 +231,14 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         minPaymentTerm: updated.minPaymentTerm,
       };
       const res = await updateProductAction(updated.id, updatePayload);
-      setProducts((prev) => prev.map((p) => (p.id === res.id ? res : p)));
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        throw new Error(res.error);
+      }
+      const saved = res as InsuranceProduct;
+      setProducts((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
       await refreshMetrics();
-      showToast(`Aturan pricing untuk "${res.name}" berhasil diperbarui.`);
+      showToast(`Aturan pricing untuk "${saved.name}" berhasil diperbarui.`);
       setSelectedProductForPricing(null);
     } catch (err: unknown) {
       const message =
@@ -214,7 +253,12 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
   // Toggle Status
   const handleToggleStatus = async (product: InsuranceProduct) => {
     try {
-      const updated = await toggleProductStatusAction(product.id);
+      const res = await toggleProductStatusAction(product.id);
+      if ('error' in res && res.error) {
+        showToast(res.error);
+        return;
+      }
+      const updated = res as InsuranceProduct;
       setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       await refreshMetrics();
       showToast(
@@ -301,7 +345,10 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setProductToDuplicate(null);
+              setIsCreateModalOpen(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm hover:bg-blue-700 transition-colors cursor-pointer"
           >
             <span>+</span>
@@ -609,7 +656,7 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
                         </div>
                       </td>
 
-                      {/* Actions: Edit, Pricing, Uji */}
+                      {/* Actions: Edit, Duplikat, Pricing, Uji */}
                       <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -620,6 +667,16 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
                           >
                             <span>Edit</span>
                             <span>✏️</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            aria-label={`Duplikat Produk ${product.name}`}
+                            onClick={() => handleDuplicateProduct(product)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <span>Duplikat</span>
+                            <span>📋</span>
                           </button>
 
                           <button
@@ -825,7 +882,27 @@ export const ProductManagementWorkbench: React.FC<ProductManagementWorkbenchProp
       {/* 1. Modal Tambah Produk (Board 2) */}
       <CreateProductModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        existingSlugs={products.map((p) => p.slug)}
+        initialData={
+          productToDuplicate
+            ? {
+                name: productToDuplicate.name,
+                slug: productToDuplicate.slug,
+                category: productToDuplicate.category,
+                status: productToDuplicate.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+                basePremiumMonthly: productToDuplicate.startingPremium,
+                minSumAssured: productToDuplicate.minSumAssured,
+                maxSumAssured: productToDuplicate.maxSumAssured,
+                minAge: 18,
+                maxAge: 60,
+                summary: productToDuplicate.shortDescription,
+              }
+            : null
+        }
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setProductToDuplicate(null);
+        }}
         onSubmitCreate={handleCreateProduct}
       />
 

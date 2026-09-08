@@ -8,6 +8,19 @@ import { Select } from '@/components/atoms/Select';
 export interface CreateProductModalProps {
   isOpen: boolean;
   onClose: () => void;
+  existingSlugs?: string[];
+  initialData?: {
+    name?: string;
+    slug?: string;
+    category?: 'life' | 'health' | 'vehicle';
+    status?: 'ACTIVE' | 'INACTIVE';
+    basePremiumMonthly?: number;
+    minSumAssured?: number;
+    maxSumAssured?: number;
+    minAge?: number;
+    maxAge?: number;
+    summary?: string;
+  } | null;
   onSubmitCreate?: (data: {
     name: string;
     slug: string;
@@ -25,6 +38,8 @@ export interface CreateProductModalProps {
 export const CreateProductModal: React.FC<CreateProductModalProps> = ({
   isOpen,
   onClose,
+  existingSlugs = [],
+  initialData,
   onSubmitCreate,
 }) => {
   const [name, setName] = useState('Perlindungan Jiwa Syariah Murni');
@@ -42,15 +57,34 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Clear error and loading states when modal re-opens
+  // Synchronize state when modal opens or initialData changes
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
+      if (initialData) {
+        setName(initialData.name || '');
+        setSlug(initialData.slug || '');
+        setCategory(initialData.category || 'life');
+        setStatus(initialData.status || 'ACTIVE');
+        setBasePremiumMonthly(initialData.basePremiumMonthly ?? 200000);
+        setMinSumAssured(initialData.minSumAssured ?? 100000000);
+        setMaxSumAssured(initialData.maxSumAssured ?? 3000000000);
+        setMinAge(initialData.minAge ?? 18);
+        setMaxAge(initialData.maxAge ?? 60);
+        setSummary(
+          initialData.summary ||
+            'Santunan Meninggal Dunia 100% UP. Bebas Medical Exam (MCU) untuk UP hingga Rp 1 Miliar. Garansi SLA pencairan klaim 3 hari kerja ke rekening ahli waris setelah verifikasi berkas.'
+        );
+      }
       setErrorMsg(null);
       setIsSubmitting(false);
     }
   }
+
+  const isSlugDuplicate = Boolean(
+    slug.trim() && existingSlugs.some((s) => s.toLowerCase() === slug.trim().toLowerCase())
+  );
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -59,6 +93,20 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
     setSlug(autoSlug);
+    if (existingSlugs.some((s) => s.toLowerCase() === autoSlug)) {
+      setErrorMsg(`Produk dengan slug "${autoSlug}" sudah terdaftar di sistem.`);
+    } else {
+      setErrorMsg(null);
+    }
+  };
+
+  const handleSlugChange = (val: string) => {
+    setSlug(val);
+    if (existingSlugs.some((s) => s.toLowerCase() === val.trim().toLowerCase())) {
+      setErrorMsg(`Produk dengan slug "${val.trim()}" sudah terdaftar di sistem.`);
+    } else {
+      setErrorMsg(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,6 +117,10 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
     }
     if (!slug.trim()) {
       setErrorMsg('Slug URL API wajib diisi.');
+      return;
+    }
+    if (isSlugDuplicate) {
+      setErrorMsg(`Produk dengan slug "${slug.trim()}" sudah terdaftar di sistem. Silakan gunakan slug lain.`);
       return;
     }
 
@@ -127,9 +179,9 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
                 type="button"
                 variant="primary"
                 size="md"
-                disabled={!name.trim() || !slug.trim() || isSubmitting}
+                disabled={!name.trim() || !slug.trim() || isSubmitting || isSlugDuplicate}
                 onClick={handleSubmit}
-                className="bg-blue-600 hover:bg-blue-700 shadow-sm"
+                className="bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50"
               >
                 {isSubmitting ? 'Menyimpan...' : 'Simpan & Sinkronkan ke Vector DB 🚀'}
               </Button>
@@ -172,10 +224,19 @@ export const CreateProductModal: React.FC<CreateProductModalProps> = ({
                 type="text"
                 required
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => handleSlugChange(e.target.value)}
                 placeholder="misal: life-syariah-murni"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs font-mono text-slate-700 focus:outline-none focus:ring-2 ${
+                  isSlugDuplicate
+                    ? 'border-rose-300 focus:ring-rose-500'
+                    : 'border-slate-200 focus:ring-blue-500'
+                }`}
               />
+              {isSlugDuplicate && (
+                <p className="text-[10px] text-rose-600 font-medium">
+                  ⚠️ Slug ini sudah digunakan. Ubah slug agar unik.
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="block text-[11px] font-semibold text-slate-700">
