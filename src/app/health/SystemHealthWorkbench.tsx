@@ -498,7 +498,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
             </span>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-extrabold text-slate-900 font-mono">
+            <div className="text-2xl font-extrabold text-slate-900 font-mono" suppressHydrationWarning>
               {(overview.subsystemStats?.totalAuditLogs ?? 4892).toLocaleString('en-US')} Logs
             </div>
             <div className="text-[11px] text-purple-600 font-semibold font-mono mt-1">
@@ -776,7 +776,7 @@ export const SystemHealthWorkbench: React.FC<SystemHealthWorkbenchProps> = ({
                       }}
                       className="hover:bg-slate-50/80 transition-colors cursor-pointer focus:outline-none focus:bg-slate-100/80"
                     >
-                      <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap">
+                      <td className="py-3 px-4 text-slate-600 font-medium whitespace-nowrap" suppressHydrationWarning>
                         {new Date(log.timestamp).toLocaleString('id-ID', {
                           day: '2-digit',
                           month: 'short',
