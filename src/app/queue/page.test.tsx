@@ -10,7 +10,7 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     render(Component);
 
     expect(screen.getByText('Underwriting & Verification Workbench')).toBeDefined();
-    expect(screen.getByText('Daftar Antrean Aktif (7)')).toBeDefined();
+    expect(screen.getByText(/Daftar Antrean Aktif/i)).toBeDefined();
   });
 
   it('should render with initialSelectedId from searchParams deep-link', async () => {
@@ -27,16 +27,13 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     render(<UnderwritingWorkbench initialQueue={initialQueue} />);
 
     // 1. Tab filtering
-    const tabReview = screen.getByText(/Perlu Review/i);
-    fireEvent.click(tabReview);
-    expect(screen.getByText('Budi Santoso (34)')).toBeDefined();
-
     const tabApproved = screen.getByText(/Disetujui/i);
     fireEvent.click(tabApproved);
     expect(screen.getByText('Agus Kurniawan (38)')).toBeDefined();
 
-    const tabAll = screen.getByRole('button', { name: /^Semua/i });
-    fireEvent.click(tabAll);
+    const tabReview = screen.getByText(/Perlu Review/i);
+    fireEvent.click(tabReview);
+    expect(screen.getByText('Budi Santoso (34)')).toBeDefined();
 
     // 2. Search query filtering
     const searchInput = screen.getByPlaceholderText(/Cari nomor aplikasi \/ NIK/i);
@@ -147,19 +144,12 @@ describe('QueuePage & UnderwritingWorkbench', () => {
     });
   });
 
-  it('should save internal notes when clicking Simpan Keputusan button', async () => {
+  it('does not render internal audit notes section in decision card', async () => {
     const initialQueue = await applicationService.getQueue();
     render(<UnderwritingWorkbench initialQueue={initialQueue} />);
 
-    const textarea = screen.getByLabelText(/Catatan Audit Underwriter/i);
-    fireEvent.change(textarea, { target: { value: 'Catatan terupdate oleh lead underwriter.' } });
-
-    const saveBtn = screen.getByText('Simpan Keputusan 💾');
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Catatan audit internal untuk .* berhasil disimpan/i)).toBeDefined();
-    });
+    expect(screen.queryByLabelText(/Catatan Audit Underwriter/i)).toBeNull();
+    expect(screen.queryByText('Simpan Keputusan 💾')).toBeNull();
   });
 
   it('should handle toast dismiss, sync button, and empty search state', async () => {

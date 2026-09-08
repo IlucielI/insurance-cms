@@ -369,6 +369,25 @@ export class CoreApiApplicationRepository implements IApplicationRepository {
       newStatus === 'rfi_requested' ? 'under_review' : newStatus;
 
     const current = await this.findById(id);
+    if (newStatus === 'rfi_requested') {
+      try {
+        await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/request-documents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            notes: reason || notes || 'Mohon melengkapi berkas pendukung.',
+            reason: reason,
+            reviewed_by: 'Lead Underwriter',
+          }),
+        });
+      } catch (err) {
+        console.warn('[CoreApiApplicationRepository] request-documents call failed:', err);
+      }
+    }
+
     if (current && current.status === 'submitted' && mappedCoreStatus === 'approved') {
       await fetch(`${this.baseUrl}/api/v1/applications/${rawId}/status`, {
         method: 'PATCH',
