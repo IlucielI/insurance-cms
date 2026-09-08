@@ -66,8 +66,9 @@ GIT_HASH=dev
 PORT=3000
 
 # Backend Core API Integration
-NEXT_PUBLIC_CORE_API_URL=http://localhost:8080
-CORE_API_INTERNAL_URL=http://insurance-core-api:8080
+CORE_API_URL=http://localhost:8080
+MOCK_CORE_API=false
+USE_MOCK_DATA=false
 
 # Next.js Telemetry
 NEXT_TELEMETRY_DISABLED=1

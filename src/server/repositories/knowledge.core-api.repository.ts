@@ -106,11 +106,7 @@ export class CoreApiKnowledgeRepository implements IKnowledgeRepository {
   }
 
   private resolveBaseUrl(): string {
-    return (
-      process.env.CORE_API_URL?.trim() ||
-      process.env.CORE_API_INTERNAL_URL?.trim() ||
-      'http://localhost:8080'
-    );
+    return process.env.CORE_API_URL?.trim() || '';
   }
 
   private mapDocument(item: CoreApiDocumentItem): KnowledgeDocument {
