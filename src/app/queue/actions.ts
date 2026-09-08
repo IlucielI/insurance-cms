@@ -11,6 +11,7 @@ import {
 function safeRevalidateQueue() {
   try {
     revalidatePath('/queue');
+    revalidatePath('/');
   } catch {
     // Ignore when called outside Next.js request context (e.g. in test environment)
   }

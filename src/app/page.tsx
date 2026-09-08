@@ -5,6 +5,9 @@ import { StatCard } from '@/components/molecules/StatCard';
 import { StatusPill } from '@/components/molecules/StatusPill';
 import { dashboardService } from '@/server/di';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const data = await dashboardService.getOverview();
 

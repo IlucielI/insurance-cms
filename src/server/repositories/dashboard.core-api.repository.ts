@@ -120,12 +120,12 @@ export class CoreApiDashboardRepository implements IDashboardRepository {
         fetch(`${this.baseUrl}/api/v1/admin/metrics`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          next: { revalidate: 30 },
+          cache: 'no-store',
         }),
         fetch(`${this.baseUrl}/api/v1/applications?limit=5`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          next: { revalidate: 30 },
+          cache: 'no-store',
         }),
       ]);
 
