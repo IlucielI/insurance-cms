@@ -407,11 +407,11 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
-              {metrics.totalChunks || 148} Chunks
+              {metrics.totalChunks ?? 0} Chunks
             </div>
             <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{documents.length || 12} Dokumen Sumber Terindeks</span>
+              <span className={`inline-block w-2 h-2 rounded-full ${documents.length > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+              <span>{documents.length} Dokumen Sumber Terindeks</span>
             </div>
           </div>
         </div>
@@ -444,10 +444,10 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900 font-mono">
-              {metrics.avgLatencyMs !== undefined ? `${metrics.avgLatencyMs} ms` : '38 ms'}
+              {documents.length > 0 ? `${metrics.avgLatencyMs ?? 38} ms` : '0 ms'}
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-              Top-3 Semantic Sim &gt; 0.85
+              {documents.length > 0 ? 'Top-3 Semantic Sim > 0.85' : 'Menunggu Dokumen Terindeks'}
             </div>
           </div>
         </div>
@@ -462,7 +462,7 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
           </div>
           <div className="mt-3">
             <div className="text-2xl font-extrabold text-slate-900">
-              {metrics.indexHealthPercent !== undefined ? `${metrics.indexHealthPercent}%` : '99.4%'}
+              {documents.length > 0 ? `${metrics.indexHealthPercent ?? 100}%` : '0%'}
             </div>
             <div className="text-[11px] text-purple-600 font-semibold mt-1">
               0 Kasus Halusinasi Kebijakan
@@ -882,63 +882,21 @@ Pemeriksaan kesehatan lanjutan diwajibkan untuk uang pertanggungan di atas batas
                     </div>
                   </div>
                 </div>
+              ) : documents.length === 0 ? (
+                <div className="p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-center space-y-2 pt-6">
+                  <span className="text-2xl block">📂</span>
+                  <div className="text-xs font-bold text-slate-700">Belum Ada Dokumen Terindeks</div>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                    Knowledge Base masih kosong. Tambahkan atau upload dokumen baru untuk mengaktifkan semantic similarity matching.
+                  </p>
+                </div>
               ) : (
-                /* Default Preview (Penpot Board 1 Spec) */
-                <div className="space-y-3 pt-3 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Simulasi Hasil Retrieval Top Chunks:
-                    </span>
-                    <span className="text-[11px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-semibold">
-                      ⚡ 38 ms
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        Rank #1 • Similarity: 0.941 (Sangat Relevan)
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400 font-medium">
-                        chk_uw_dsr_001 • Aturan Medical Threshold
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed italic mt-1">
-                      &ldquo;Batas Non-Medical Limit untuk kelompok usia 36 - 45 tahun adalah Rp 350.000.000. Pengajuan di atas Rp 350jt mewajibkan Tele-Interview Underwriting.&rdquo;
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                        Rank #2 • Similarity: 0.887 (Relevan)
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400 font-medium">
-                        chk_life_crit_002 • Smoker Loading Factor
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 leading-relaxed italic mt-1">
-                      &ldquo;Status perokok aktif dikenakan koefisien risiko mortalitas 1.45x (+45% premi dasar) dan mewajibkan pemeriksaan fungsi paru bila UP &gt; 500jt.&rdquo;
-                    </p>
-                  </div>
-
-                  {/* Grounded LLM Synthesis Box */}
-                  <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-2">
-                    <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">
-                      Sintesis Jawaban AI (LLM Grounded Synthesis):
-                    </span>
-                    <p className="text-xs text-slate-800 leading-relaxed">
-                      <strong className="block text-indigo-700 font-bold mb-1">
-                        💡 Rekomendasi Assistant Underwriting:
-                      </strong>
-                      Berdasarkan <strong>Aturan Medical Threshold</strong> dan <strong>Smoker Loading Factor</strong>: Pengajuan UP Rp 800jt untuk nasabah usia 42 tahun <strong>MELEBIHI batas non-MCU (Rp 350jt)</strong>. Status perokok aktif menambah loading risiko +45%. 
-                      Rekomendasi: <strong>WAJIB Medical Check-Up (Pemeriksaan Darah Lengkap &amp; EKG)</strong> serta verifikasi riwayat paru.
-                    </p>
-                    <div className="pt-2 border-t border-indigo-100 flex items-center justify-between text-[10px] text-indigo-600 font-mono">
-                      <span>⏱️ Latency: 38ms vector search + 580ms inference</span>
-                      <span>Token: ~340</span>
-                    </div>
-                  </div>
+                <div className="p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-center space-y-2 pt-6">
+                  <span className="text-2xl block">💡</span>
+                  <div className="text-xs font-bold text-slate-700">Siap Menjalankan Semantic Search</div>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                    Ketik pertanyaan atau klik contoh query cepat di atas, lalu klik <strong>Jalankan Semantic Search</strong> untuk melihat top chunks dan rekomendasi AI.
+                  </p>
                 </div>
               )}
 
