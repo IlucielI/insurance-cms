@@ -81,9 +81,9 @@ describe('Topbar & NotificationPopover', () => {
     );
 
     expect(screen.getByText('Dashboard & Kinerja Portofolio')).toBeDefined();
-    expect(screen.getByPlaceholderText('Cari metrik, polis, atau underwriting...')).toBeDefined();
     expect(screen.getByText('Core API v1.2 Online')).toBeDefined();
-    expect(screen.getByText('Refresh Data')).toBeDefined();
+    expect(screen.queryByPlaceholderText('Cari metrik, polis, atau underwriting...')).toBeNull();
+    expect(screen.queryByText('Refresh Data')).toBeNull();
 
     const badge = screen.getByTestId('notification-badge');
     expect(badge.textContent).toBe('2');

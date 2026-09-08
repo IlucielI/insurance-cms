@@ -2,10 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Breadcrumb } from '@/components/molecules/Breadcrumb';
-import { SearchInput } from '@/components/molecules/SearchInput';
 import { StatusPill } from '@/components/molecules/StatusPill';
 import { UserChip } from '@/components/molecules/UserChip';
-import { Button } from '@/components/atoms/Button';
 import { NotificationPopover } from './NotificationPopover';
 import type { NotificationItem } from '@/server/repositories/notification.repository.interface';
 import {
@@ -26,7 +24,6 @@ export interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({
   breadcrumbTitle = 'Dashboard & Kinerja Portofolio',
-  onSync,
   className = '',
   initialNotifications,
   initialUnreadCount,
@@ -62,15 +59,6 @@ export const Topbar: React.FC<TopbarProps> = ({
       loadNotifications();
     }
   }, [disableAutoFetch, loadNotifications]);
-
-  const handleSyncClick = async () => {
-    if (onSync) {
-      onSync();
-    }
-    if (!disableAutoFetch) {
-      await loadNotifications();
-    }
-  };
 
   const handleMarkAsRead = async (id: string) => {
     // Optimistic update
@@ -114,26 +102,10 @@ export const Topbar: React.FC<TopbarProps> = ({
         <Breadcrumb current={breadcrumbTitle} />
       </div>
 
-      {/* Right: Controls (Search, Status, Sync, Notif, User) */}
+      {/* Right: Controls (Status, Notif, User) */}
       <div className="flex items-center gap-3.5">
-        {/* Omnisearch */}
-        <div className="w-[260px]">
-          <SearchInput placeholder="Cari metrik, polis, atau underwriting..." />
-        </div>
-
         {/* Global Live Status Pill */}
         <StatusPill label="Core API v1.2 Online" status="online" />
-
-        {/* Unified Refresh Button */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleSyncClick}
-          className="border-slate-300 text-slate-800 font-semibold"
-        >
-          <span>🔄</span>
-          <span>Refresh Data</span>
-        </Button>
 
         {/* Notification Bell with Dropdown */}
         <div className="relative">
