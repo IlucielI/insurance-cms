@@ -236,18 +236,14 @@ export class CoreApiDashboardRepository implements IDashboardRepository {
             slaText: status === 'approved' ? 'Selesai' : `${minutesLeft} min left`,
           };
         });
-      } else {
-        // Use mock fallback queue if empty
-        const fallbackData = await this.mockFallback.getDashboardData();
-        recentQueue = fallbackData.recentQueue;
       }
 
       // 4. Map SLA Distribution & Statuses
-      const totalApps = metrics.applications.total || 1;
-      const pctApproved = Number(((metrics.applications.approved / totalApps) * 100).toFixed(1));
-      const pctUnderReview = Number(((metrics.applications.under_review / totalApps) * 100).toFixed(1));
-      const pctSubmitted = Number(((metrics.applications.submitted / totalApps) * 100).toFixed(1));
-      const pctRejected = Number(((metrics.applications.rejected / totalApps) * 100).toFixed(1));
+      const totalApps = metrics.applications.total;
+      const pctApproved = totalApps > 0 ? Number(((metrics.applications.approved / totalApps) * 100).toFixed(1)) : 0;
+      const pctUnderReview = totalApps > 0 ? Number(((metrics.applications.under_review / totalApps) * 100).toFixed(1)) : 0;
+      const pctSubmitted = totalApps > 0 ? Number(((metrics.applications.submitted / totalApps) * 100).toFixed(1)) : 0;
+      const pctRejected = totalApps > 0 ? Number(((metrics.applications.rejected / totalApps) * 100).toFixed(1)) : 0;
 
       const slaDistribution: SlaDistribution = {
         averageSlaMinutes: metrics.underwriting.average_sla_minutes,
@@ -264,13 +260,13 @@ export class CoreApiDashboardRepository implements IDashboardRepository {
           {
             label: 'Dalam Review (Under Review)',
             countText: `${this.formatNumber(metrics.applications.under_review)} (${pctUnderReview}%)`,
-            percentage: Math.max(pctUnderReview, 8.0),
+            percentage: pctUnderReview,
             color: '#f59e0b',
           },
           {
             label: 'Pengajuan Baru (Submitted)',
             countText: `${this.formatNumber(metrics.applications.submitted)} (${pctSubmitted}%)`,
-            percentage: Math.max(pctSubmitted, 5.0),
+            percentage: pctSubmitted,
             color: '#2563eb',
           },
           {

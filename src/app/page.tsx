@@ -125,7 +125,7 @@ export default async function HomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                    Semua (28)
+                    Semua ({data.kpis.totalApplications.value})
                   </span>
                   <Link
                     href="/queue"
@@ -150,45 +150,53 @@ export default async function HomePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {data.recentQueue.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-blue-600 block">{row.id}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            SLA: {row.slaText}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-bold text-slate-900 block">{row.applicantName}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            NIK: {row.nik.substring(0, 8)}***
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-medium text-slate-700">
-                          {row.productName}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
-                          {row.sumAssured}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(
-                              row.status
-                            )}`}
-                          >
-                            {row.statusLabel}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <Link
-                            href={`/queue?id=${row.id}`}
-                            className="inline-flex items-center px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
-                          >
-                            Buka
-                          </Link>
+                    {data.recentQueue.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                          Belum ada antrean pengajuan yang perlu tindakan saat ini.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      data.recentQueue.map((row) => (
+                        <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-blue-600 block">{row.id}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              SLA: {row.slaText}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 block">{row.applicantName}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              NIK: {row.nik.substring(0, 8)}***
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-medium text-slate-700">
+                            {row.productName}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
+                            {row.sumAssured}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(
+                                row.status
+                              )}`}
+                            >
+                              {row.statusLabel}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <Link
+                              href={`/queue?id=${row.id}`}
+                              className="inline-flex items-center px-2.5 py-1 rounded bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
+                            >
+                              Buka
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -196,7 +204,12 @@ export default async function HomePage() {
 
             {/* Table Footer */}
             <div className="p-4 bg-slate-50/50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-              <span>Menampilkan 5 dari 28 antrean • Auto-refresh via WebSocket Core API</span>
+              <span>
+                {data.recentQueue.length > 0
+                  ? `Menampilkan ${data.recentQueue.length} dari ${data.kpis.totalApplications.value} antrean`
+                  : 'Tidak ada antrean pengajuan aktif'}{' '}
+                • Terhubung ke Core API
+              </span>
             </div>
           </div>
 
